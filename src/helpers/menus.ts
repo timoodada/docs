@@ -6,11 +6,11 @@ export interface MenuData {
 }
 export const buildMenu = (originMenu: MenuData[]): MenuData[] => {
   const menus = [];
+  originMenu.forEach((v) => {
+    v.children = [];
+  });
   for (let i = 0; i < originMenu.length; i += 1) {
     const item = originMenu[i];
-    if (!item.children) {
-      item.children = [];
-    }
     if (!item.parent) {
       menus.push(item);
     } else {

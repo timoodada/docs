@@ -22,6 +22,7 @@ exports.getMenuMapPath = function getMenuMapPath(prefix, dataMapDir, lang) {
   return `${prefix.replace(/\/$/, '')}/${dataMapDir}/menu.${lang}.json`;
 };
 exports.buildMenuData = function buildMenuData(data) {
+  data = data.filter((v) => v.type !== 'root');
   for (let i = 0; i < data.length; i += 1) {
     const item = data[i];
     for (let j = i; j < data.length; j += 1) {

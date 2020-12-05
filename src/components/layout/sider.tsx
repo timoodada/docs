@@ -1,18 +1,21 @@
 import React, {
-  CSSProperties, FC, useCallback, useContext, useMemo,
+  CSSProperties, FC, useCallback, useContext, useEffect, useMemo, useState,
 } from 'react';
 import { Layout, Menu } from 'antd';
+import { Link } from 'gatsby';
 import { QueryContext } from '@/context';
 import { buildMenu, MenuData } from '@/helpers/menus';
+import { combineClassNames } from '@/helpers/utils';
 
 const { Sider: AntSider } = Layout;
 
 interface Props {
-  style?: CSSProperties;
+  className?: string;
 }
 export const Sider: FC<Props> = (props) => {
-  const { style } = props;
+  const { className } = props;
   const { pageContext, data } = useContext(QueryContext);
+  const { slug } = data.markdownRemark.fields;
 
   const menu = useMemo(() => {
     return buildMenu(pageContext.menu);
@@ -22,34 +25,98 @@ export const Sider: FC<Props> = (props) => {
     return menuData.map((v) => {
       if (v.children?.length) {
         return (
-          <Menu.SubMenu title={v.title} key={v.slug}>
+          <Menu.SubMenu
+            title={v.title}
+            key={v.slug}
+          >
             { render(v.children) }
           </Menu.SubMenu>
         );
       }
       return (
         <Menu.Item key={v.slug}>
-          <a href={v.slug}>{ v.title }</a>
+          <Link to={v.slug}>{ v.title }</Link>
         </Menu.Item>
       );
     });
   }, []);
+  const [openKeys, setOpenKeys] = useState([]);
+
+  const defaultOpenKeys = useMemo(() => {
+    const originMenu = pageContext.menu;
+    const keys = [];
+    const deep = (current: string): void => {
+      for (let i = 0; i < originMenu.length; i += 1) {
+        if (current === originMenu[i].slug) {
+          keys.push(originMenu[i].parent);
+          deep(originMenu[i].parent);
+          break;
+        }
+      }
+    };
+    deep(slug);
+    return keys;
+  }, [pageContext, slug]);
+  const [selectedKeys, setSelectedKeys] = useState([]);
+  const onClick = useCallback(({ key }) => {
+    setSelectedKeys([key]);
+  }, []);
+  const onOpenChange = useCallback((keys: string[]) => {
+    setOpenKeys(keys);
+  }, []);
+  useEffect(() => {
+    setSelectedKeys(slug);
+  }, [slug]);
+  useEffect(() => {
+    setOpenKeys((prevState) => {
+      return Array.from(new Set(prevState.concat(defaultOpenKeys)));
+    });
+  }, [defaultOpenKeys]);
 
   return (
-    <AntSider
-      trigger={null}
-      style={style}
-      theme="light"
+    <div
+      className="root-sider-wrapper"
+      style={{
+        position: 'absolute',
+      }}
     >
-      <div className="logo" style={{ height: 64 }} />
-      <Menu
-        mode="inline"
-        defaultSelectedKeys={[data.mdx.fields.slug]}
-        defaultOpenKeys={[menu.find((v) => data.mdx.fields.slug.includes(v.slug))?.slug]}
+      <AntSider
+        trigger={null}
+        width={280}
         theme="light"
+        className={combineClassNames('root-sider', className)}
       >
-        { render(menu) }
-      </Menu>
-    </AntSider>
+        <Menu
+          mode="inline"
+          selectedKeys={selectedKeys}
+          openKeys={openKeys}
+          onClick={onClick}
+          onOpenChange={onOpenChange}
+          theme="light"
+        >
+          {
+            menu.map((v) => {
+              if (v.children?.length) {
+                return (
+                  <Menu.ItemGroup
+                    title={v.title}
+                    key={v.slug}
+                  >
+                    { render(v.children) }
+                  </Menu.ItemGroup>
+                );
+              }
+              return (
+                <Menu.Item
+                  key={v.slug}
+                >
+                  <Link to={v.slug}>{ v.title }</Link>
+                </Menu.Item>
+              );
+            })
+          }
+        </Menu>
+      </AntSider>
+    </div>
   );
 };

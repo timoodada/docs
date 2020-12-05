@@ -1,21 +1,36 @@
 import React, { FC, useMemo } from 'react';
 import { graphql } from 'gatsby';
-import { MDXRenderer } from 'gatsby-plugin-mdx';
 import { ConfigProvider } from 'antd';
 import { Layout } from '@/components/layout';
 import { QueryContext } from '@/context';
 import zhCN from 'antd/lib/locale/zh_CN';
 import enUS from 'antd/lib/locale/en_US';
+import { Header } from '@/components/layout/header';
+import { Sider } from '@/components/layout/sider';
+import { CustomLink } from '@/components/custom-link';
+
+const RehypeReact = require('rehype-react');
+
+const renderAst = new RehypeReact({
+  createElement: React.createElement,
+  components: {
+    'custom-a': CustomLink,
+  },
+}).Compiler;
 
 interface Props {
   data: any;
   pageContext: any;
+  location: any;
 }
-const MDXRuntime: FC<Props> = (props) => {
-  const { data, pageContext, children } = props;
+const MDRuntime: FC<Props> = (props) => {
+  const {
+    data, pageContext, children, location,
+  } = props;
+  console.log(props);
 
   const queryData = useMemo(() => {
-    return { data, pageContext };
+    return { data, pageContext, location };
   }, [data, pageContext]);
 
   if (!data || !pageContext) {
@@ -24,22 +39,27 @@ const MDXRuntime: FC<Props> = (props) => {
     );
   }
   return (
-    <QueryContext.Provider
-      value={queryData}
-    >
-      <ConfigProvider locale={data.mdx.fields.lang === 'zh-CN' ? zhCN : enUS}>
-        <Layout>
-          {
-            data?.mdx.body
-              ? <MDXRenderer>{data?.mdx.body}</MDXRenderer>
-              : null
-          }
-        </Layout>
-      </ConfigProvider>
-    </QueryContext.Provider>
+    <>
+      <QueryContext.Provider
+        value={queryData}
+      >
+        <ConfigProvider locale={data.markdownRemark.fields.lang === 'zh-CN' ? zhCN : enUS}>
+          <Layout
+            header={
+              <Header />
+            }
+            sider={
+              <Sider />
+            }
+          >
+            <div className="root-remark-content">{ renderAst(pageContext.htmlAst) }</div>
+          </Layout>
+        </ConfigProvider>
+      </QueryContext.Provider>
+    </>
   );
 };
-export default MDXRuntime;
+export default MDRuntime;
 export const pageQuery = graphql`
   query($id: String!) {
     site {
@@ -53,9 +73,8 @@ export const pageQuery = graphql`
         dataMapDir
       }
     }
-    mdx(id: {eq: $id}) {
+    markdownRemark(id: {eq: $id}) {
       id
-      body
       fields {
         title
         lang

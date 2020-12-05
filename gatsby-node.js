@@ -29,17 +29,19 @@ exports.createPages = async ({ graphql, actions }) => {
   const result = await graphql(
     `
       {
-        allMdx {
+        allMarkdownRemark {
           edges {
             node {
               fields {
                 id
                 slug
+                filePath
                 title
                 lang
+                type
+                order
               }
-              rawBody
-              mdxAST
+              htmlAst
             }
           }
         }
@@ -51,11 +53,25 @@ exports.createPages = async ({ graphql, actions }) => {
     await Promise.reject(result.errors);
   }
 
-  const { edges } = result.data.allMdx;
+  const { edges } = result.data.allMarkdownRemark;
   const searchMap = edges.map(({ node }) => {
     const array = [];
-    visit(node.mdxAST, ['heading', 'paragraph'], (value) => {
+    visit(node.htmlAst, ['element', 'text'], (value) => {
       if (!value) {
+        return;
+      }
+      if (value.type === 'element' && value.tagName === 'a') {
+        const regExp = new RegExp(`\\.(${config.i18n.langs.join('|')})\\.md`);
+        if (
+          value.properties
+          && value.properties.href
+          && regExp.test(value.properties.href)
+        ) {
+          value.tagName = 'custom-a';
+        }
+        return;
+      }
+      if (value.type === 'element' && !/^h\d$/.test(value.tagName)) {
         return;
       }
       let text = '';
@@ -66,24 +82,28 @@ exports.createPages = async ({ graphql, actions }) => {
         }
       }
       switch (value.type) {
-        case 'heading':
+        case 'element':
           array.push({
+            l: value.tagName,
             t: text,
             c: [],
           });
           break;
-        case 'paragraph':
+        case 'text':
           if (array.length) {
-            array[array.length - 1].c.push(text);
+            array[array.length - 1].c.push(value.value);
           } else {
             array.push({
               t: '',
-              c: [text],
+              c: [value.value],
             });
           }
           break;
         default:
       }
+    });
+    array.forEach((v) => {
+      v.c = v.c.join('').split(/\n/).filter((s) => s);
     });
     return {
       id: node.fields.id,
@@ -105,6 +125,8 @@ exports.createPages = async ({ graphql, actions }) => {
     }).map(({ node }) => ({
       title: node.fields.title,
       slug: node.fields.slug,
+      type: node.fields.type,
+      order: node.fields.order,
     }));
     const formattedMenu = buildMenuData(menuData);
     menu[item] = formattedMenu;
@@ -114,19 +136,20 @@ exports.createPages = async ({ graphql, actions }) => {
 
   // Create blog posts pages.
   await Promise.all(edges.map(({ node }) => createPage({
-    path: node.fields.slug || '/',
+    path: node.fields.filePath || '/',
     component: resolve(__dirname, './src/templates/docs.tsx'),
     context: {
       id: node.fields.id,
       lang: node.fields.lang,
       menu: menu[node.fields.lang],
+      htmlAst: node.htmlAst,
     },
   })));
 };
 exports.onCreateNode = ({ node, getNode, actions }) => {
   const { createNodeField } = actions;
 
-  if (node.internal.type === 'Mdx') {
+  if (node.internal.type === 'MarkdownRemark') {
     const parent = getNode(node.parent);
 
     let value = parent.relativePath.replace(parent.ext, '');
@@ -146,23 +169,40 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     if (value === config.i18n.defaultLang) {
       value = '';
     }
-
+    createNodeField({
+      name: 'filePath',
+      node,
+      value: `/${value}`,
+    });
     createNodeField({
       name: 'slug',
       node,
       value: `${config.pathPrefix.replace(/\/$/, '')}/${value}`,
     });
-
     createNodeField({
       name: 'id',
       node,
       value: node.id,
     });
-
     createNodeField({
       name: 'title',
       node,
       value: node.frontmatter.title || startCase(parent.name),
+    });
+    createNodeField({
+      name: 'type',
+      node,
+      value: node.frontmatter.type || '',
+    });
+    createNodeField({
+      name: 'order',
+      node,
+      value: node.frontmatter.order || -1,
+    });
+    createNodeField({
+      name: 'description',
+      node,
+      value: node.frontmatter.description || config.siteMetadata.description,
     });
   }
 };

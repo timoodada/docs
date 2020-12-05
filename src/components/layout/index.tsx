@@ -1,34 +1,33 @@
 import React, {
-  FC, PropsWithChildren,
+  CSSProperties,
+  FC, ReactNode, useRef,
 } from 'react';
-import { Layout as AntLayout } from 'antd';
-import { Sider } from '@/components/layout/sider';
-import { Header } from '@/components/layout/header';
+import { BackTop } from 'antd';
 import 'antd/dist/antd.less';
 import './style.less';
+import { combineClassNames } from '@/helpers/utils';
 
-const { Content } = AntLayout;
+interface Props {
+  header?: ReactNode;
+  sider?: ReactNode;
+  className?: string;
+  contentStyle?: CSSProperties;
+}
+export const Layout: FC<Props> = (props) => {
+  const layout = useRef<HTMLDivElement>();
 
-export const Layout: FC<PropsWithChildren<any>> = (props) => {
-  const { children } = props;
+  const {
+    children, header, sider, className,
+  } = props;
 
   return (
-    <AntLayout className="root-layout">
-      <Sider
-        style={{
-          overflow: 'auto',
-          height: '100%',
-          position: 'fixed',
-          left: 0,
-          width: 200,
-        }}
-      />
-      <AntLayout
-        style={{ paddingLeft: 200 }}
-      >
-        <Header />
-        <Content style={{ padding: 20 }}>{ children }</Content>
-      </AntLayout>
-    </AntLayout>
+    <div className={combineClassNames('root-layout', className)} ref={layout}>
+      { header }
+      <div className="root-layout-content">
+        { sider }
+        <div className="root-markdown-wrapper">{ children }</div>
+      </div>
+      <BackTop target={() => layout.current} />
+    </div>
   );
 };

@@ -12,7 +12,7 @@ export const SearchBox: FC = () => {
   const { data } = useContext(QueryContext);
 
   useEffect(() => {
-    const searchMap = getSearchMapPath(pathPrefix, dataMapDir, data.mdx.fields.lang);
+    const searchMap = getSearchMapPath(pathPrefix, dataMapDir, data.markdownRemark.fields.lang);
     get(searchMap).pipe(
       tap((res) => {
         console.log(res);
