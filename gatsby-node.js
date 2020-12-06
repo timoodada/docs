@@ -66,6 +66,7 @@ exports.createPages = async ({ graphql, actions }) => {
           value.properties
           && value.properties.href
           && regExp.test(value.properties.href)
+          && !/^https?:\/\//.test(value.properties.href)
         ) {
           value.tagName = 'custom-a';
         }
@@ -177,7 +178,12 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     createNodeField({
       name: 'slug',
       node,
-      value: `${config.pathPrefix.replace(/\/$/, '')}/${value}`,
+      value: `/${value}`,
+    });
+    createNodeField({
+      name: 'prefix',
+      node,
+      value: config.pathPrefix.replace(/\/$/, ''),
     });
     createNodeField({
       name: 'id',
@@ -187,7 +193,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     createNodeField({
       name: 'title',
       node,
-      value: node.frontmatter.title || startCase(parent.name),
+      value: node.frontmatter.title || startCase(parent.name) || '',
     });
     createNodeField({
       name: 'type',
@@ -197,7 +203,7 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
     createNodeField({
       name: 'order',
       node,
-      value: node.frontmatter.order || -1,
+      value: Number(node.frontmatter.order) || -1,
     });
     createNodeField({
       name: 'description',

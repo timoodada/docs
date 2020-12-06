@@ -1,3 +1,7 @@
+const config = require('../../config');
+
+export const formattedPrefix = config.pathPrefix.replace(/\/$/, '');
+
 export function isPlainObject(val: { [prop: string]: any }): val is { [prop: string]: any } {
   return toString.call(val) === '[object Object]';
 }
@@ -75,4 +79,21 @@ export function combineClassNames(...args: (string | null | undefined)[]): strin
 
 export function addClass(dom: HTMLElement, className: string): void {
   dom.className = combineClassNames(dom.className, className);
+}
+
+export function queryParse(val: string | { [prop: string]: string }): any {
+  if (typeof val === 'string') {
+    if (val.indexOf('?') === 0) { val = val.substr(1); }
+    const query: { [prop: string]: string } = {};
+    val.split('&').forEach((item: { split: (arg0: string) => string[] }) => {
+      const arr: string[] = item.split('=');
+      const [key, value] = arr;
+      query[key] = value;
+    });
+    return query;
+  }
+  if (isPlainObject(val)) {
+    return val;
+  }
+  return {};
 }

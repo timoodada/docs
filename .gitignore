@@ -11,6 +11,7 @@
 # gatsby
 .cache/
 public/
+content2/
 
 # misc
 .DS_Store

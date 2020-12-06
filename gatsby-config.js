@@ -131,7 +131,7 @@ const plugins = [
     },
   }];
 module.exports = {
-  pathPrefix: config.pathPrefix,
+  pathPrefix: process.env.NODE_ENV === 'production' ? config.pathPrefix : '/',
   siteMetadata: {
     ...config.siteMetadata,
     i18n: {
@@ -140,8 +140,5 @@ module.exports = {
     dataMapDir: config.dataMapDir,
   },
   plugins,
-  proxy: {
-    prefix: '/api',
-    url: 'https://127.0.0.1',
-  },
+  proxy: config.development.proxy,
 };

@@ -1,11 +1,15 @@
 import React, {
-  CSSProperties, FC, useCallback, useContext, useEffect, useMemo, useState,
+  FC, useCallback, useContext, useEffect, useMemo, useState,
 } from 'react';
 import { Layout, Menu } from 'antd';
 import { Link } from 'gatsby';
 import { QueryContext } from '@/context';
-import { buildMenu, MenuData } from '@/helpers/menus';
-import { combineClassNames } from '@/helpers/utils';
+import { buildMenu, getSubMenu, MenuData } from '@/helpers/menus';
+import { combineClassNames, queryParse } from '@/helpers/utils';
+import { tap } from 'rxjs/operators';
+import { openKeys as openKeysState, menuList, originMenuState } from '@/components/layout/menu.state';
+
+const config = require('../../../config');
 
 const { Sider: AntSider } = Layout;
 
@@ -14,12 +18,19 @@ interface Props {
 }
 export const Sider: FC<Props> = (props) => {
   const { className } = props;
-  const { pageContext, data } = useContext(QueryContext);
-  const { slug } = data.markdownRemark.fields;
-
-  const menu = useMemo(() => {
-    return buildMenu(pageContext.menu);
-  }, [pageContext]);
+  const { originMenu: contextOriginMenu, data, location } = useContext(QueryContext);
+  const originMenu = originMenuState.use();
+  const search = queryParse(location.search);
+  let currentSlug = '';
+  let lang = config.i18n.defaultLang;
+  if (data?.markdownRemark?.fields) {
+    currentSlug = `${data.markdownRemark.fields.prefix}${data.markdownRemark.fields.slug}`;
+    lang = data.markdownRemark.fields.lang;
+  } else if (search?.prefix && search?.slug) {
+    currentSlug = `${search.prefix.replace(/\/$/, '')}${search.slug}`;
+    lang = search.lang;
+  }
+  const [subMenus, setSubMenu] = useState([]);
 
   const render = useCallback((menuData: MenuData[]) => {
     return menuData.map((v) => {
@@ -27,51 +38,67 @@ export const Sider: FC<Props> = (props) => {
         return (
           <Menu.SubMenu
             title={v.title}
-            key={v.slug}
+            key={v.slugWithPrefix}
           >
             { render(v.children) }
           </Menu.SubMenu>
         );
       }
       return (
-        <Menu.Item key={v.slug}>
-          <Link to={v.slug}>{ v.title }</Link>
+        <Menu.Item key={v.slugWithPrefix}>
+          <Link to={v.path}>{ v.title }</Link>
         </Menu.Item>
       );
     });
   }, []);
-  const [openKeys, setOpenKeys] = useState([]);
+  const openKeys = openKeysState.use();
+  const menu = menuList.use();
 
   const defaultOpenKeys = useMemo(() => {
-    const originMenu = pageContext.menu;
     const keys = [];
     const deep = (current: string): void => {
       for (let i = 0; i < originMenu.length; i += 1) {
-        if (current === originMenu[i].slug) {
+        if (current === originMenu[i].slugWithPrefix) {
           keys.push(originMenu[i].parent);
           deep(originMenu[i].parent);
           break;
         }
       }
     };
-    deep(slug);
+    deep(currentSlug);
     return keys;
-  }, [pageContext, slug]);
+  }, [originMenu, currentSlug]);
   const [selectedKeys, setSelectedKeys] = useState([]);
   const onClick = useCallback(({ key }) => {
     setSelectedKeys([key]);
   }, []);
   const onOpenChange = useCallback((keys: string[]) => {
-    setOpenKeys(keys);
+    openKeysState.set(keys);
   }, []);
   useEffect(() => {
-    setSelectedKeys(slug);
-  }, [slug]);
+    if (contextOriginMenu && contextOriginMenu.length) {
+      originMenuState.set(contextOriginMenu);
+    }
+  }, [contextOriginMenu]);
   useEffect(() => {
-    setOpenKeys((prevState) => {
-      return Array.from(new Set(prevState.concat(defaultOpenKeys)));
-    });
+    setSelectedKeys([currentSlug]);
+  }, [currentSlug]);
+  useEffect(() => {
+    openKeysState.set(Array.from(new Set(openKeysState.getState().concat(defaultOpenKeys))));
   }, [defaultOpenKeys]);
+  useEffect(() => {
+    if (config.isSubService) {
+      return;
+    }
+    getSubMenu(lang).pipe(
+      tap((res) => {
+        setSubMenu(res);
+      }),
+    ).subscribe();
+  }, [lang]);
+  useEffect(() => {
+    menuList.set(buildMenu(originMenu.concat(subMenus)));
+  }, [originMenu, subMenus]);
 
   return (
     <div
@@ -100,7 +127,7 @@ export const Sider: FC<Props> = (props) => {
                 return (
                   <Menu.ItemGroup
                     title={v.title}
-                    key={v.slug}
+                    key={v.slugWithPrefix}
                   >
                     { render(v.children) }
                   </Menu.ItemGroup>
@@ -108,9 +135,10 @@ export const Sider: FC<Props> = (props) => {
               }
               return (
                 <Menu.Item
-                  key={v.slug}
+                  key={v.slugWithPrefix}
                 >
-                  <Link to={v.slug}>{ v.title }</Link>
+                  {/* Link will add prefix path automatically */}
+                  <Link to={v.path}>{ v.title }</Link>
                 </Menu.Item>
               );
             })

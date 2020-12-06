@@ -1,6 +1,7 @@
 import React, { FC, useMemo } from 'react';
 import { graphql } from 'gatsby';
 import { ConfigProvider } from 'antd';
+import { Provider } from 'react-redux';
 import { Layout } from '@/components/layout';
 import { QueryContext } from '@/context';
 import zhCN from 'antd/lib/locale/zh_CN';
@@ -8,6 +9,7 @@ import enUS from 'antd/lib/locale/en_US';
 import { Header } from '@/components/layout/header';
 import { Sider } from '@/components/layout/sider';
 import { CustomLink } from '@/components/custom-link';
+import { store } from '@/store';
 
 const RehypeReact = require('rehype-react');
 
@@ -20,26 +22,37 @@ const renderAst = new RehypeReact({
 
 interface Props {
   data: any;
-  pageContext: any;
+  pageContext: {
+    id: string;
+    lang: string;
+    menu: any;
+    htmlAst: any;
+  };
   location: any;
 }
 const MDRuntime: FC<Props> = (props) => {
   const {
     data, pageContext, children, location,
   } = props;
-  console.log(props);
 
   const queryData = useMemo(() => {
-    return { data, pageContext, location };
-  }, [data, pageContext]);
+    return {
+      data,
+      pageContext,
+      location,
+      originMenu: pageContext?.menu || [],
+    };
+  }, [data, pageContext, location]);
 
   if (!data || !pageContext) {
     return (
-      <>{ children }</>
+      <Provider store={store}>
+        <QueryContext.Provider value={queryData}>{ children }</QueryContext.Provider>
+      </Provider>
     );
   }
   return (
-    <>
+    <Provider store={store}>
       <QueryContext.Provider
         value={queryData}
       >
@@ -52,11 +65,11 @@ const MDRuntime: FC<Props> = (props) => {
               <Sider />
             }
           >
-            <div className="root-remark-content">{ renderAst(pageContext.htmlAst) }</div>
+            <div className="root-remark-content markdown-body">{ renderAst(pageContext.htmlAst) }</div>
           </Layout>
         </ConfigProvider>
       </QueryContext.Provider>
-    </>
+    </Provider>
   );
 };
 export default MDRuntime;
@@ -79,6 +92,7 @@ export const pageQuery = graphql`
         title
         lang
         slug
+        prefix
       }
     }
   }

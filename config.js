@@ -1,8 +1,14 @@
 const { resolve } = require('path');
 
+let prefix = process.env.ES_PATH_PREFIX || '/';
+
+if (prefix.indexOf('/') !== 0) {
+  prefix = `/${prefix}`;
+}
+
 module.exports = {
-  isSubService: false,
-  pathPrefix: process.env.PATH_PREFIX || '/',
+  isSubService: process.env.ES_IS_SUB_SERVICE || false,
+  pathPrefix: prefix,
   markdownDir: `${__dirname}/content/`,
   siteMetadata: {
     title: 'EasyStack',
@@ -18,5 +24,11 @@ module.exports = {
   theme: {
     'primary-color': '#9382E3',
     'link-color': '#9382E3',
+  },
+  development: {
+    proxy: {
+      prefix: '/esguide-dr',
+      url: 'http://127.0.0.1',
+    },
   },
 };

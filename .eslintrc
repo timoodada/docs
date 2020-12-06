@@ -34,7 +34,8 @@
     "linebreak-style": "off",
     "no-param-reassign": "off",
     "arrow-body-style": "off",
-    "ban-ts-comment": "off"
+    "ban-ts-comment": "off",
+    "max-classes-per-file": "off"
   },
   "overrides": [
     {
