@@ -8,13 +8,17 @@ const config = require('../../../config');
 
 const regExp = new RegExp(`\\.(${config.i18n.langs.join('|')})\\.md`);
 
+const customLinkFormat = (fro: string, to: string): string => {
+  return resolve(fro.replace(/[^/]+\/?$/, ''), to.replace(regExp, ''));
+};
+
 interface Props {
   href: string;
 }
 export const CustomLink: FC<Props> = (props) => {
   const { location } = useContext(QueryContext);
   const { href, children } = props;
-  const realRef = resolve(location.pathname.replace(/[^/]+\/?$/, ''), href.replace(regExp, ''));
+  const realRef = customLinkFormat(location.pathname, href);
   if (regExp.test(href)) {
     return (
       <Link {...props} to={realRef} />
@@ -29,10 +33,8 @@ export const SubCustomLink: FC<Props> = (props) => {
   const { location } = useContext(QueryContext);
   const { slug, prefix } = queryParse(location.search);
   const realRef = useMemo(() => {
-    const slugs = slug.split('/').filter((v) => v);
-    const newSlug = resolve(slugs.map((v) => `/${v}`).join('').replace(/[^/]+\/?$/, ''), href.replace(regExp, ''));
-    return `/render?slug=${newSlug}&prefix=${prefix}`;
-  }, [slug, prefix]);
+    return `/render?slug=${customLinkFormat(slug, href)}&prefix=${prefix}`;
+  }, [slug, prefix, href]);
   if (regExp.test(href)) {
     return (
       <Link {...props} to={realRef} />
