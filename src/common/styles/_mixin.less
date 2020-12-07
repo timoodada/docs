@@ -1,0 +1,14 @@
+.noWrap(){
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.clearFix(){
+  &:after{
+    content: "";
+    clear: both;
+    display: block;
+    height: 0;
+    visibility: hidden;
+  }
+}

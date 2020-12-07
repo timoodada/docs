@@ -109,8 +109,8 @@ export const getSubMenu = (lang: string): Observable<MenuData[]> => {
       const arr = [];
       Object.keys(res).forEach((sub) => {
         res[sub].forEach((v) => {
-          v.slugWithPrefix = `${sub.replace(/\/$/, '')}${v.slug}`;
-          v.path = `${formattedPrefix}/render?slug=${v.slug}&prefix=${sub.replace(/\/$/, '')}&lang=${lang}`;
+          v.slugWithPrefix = `${sub}${v.slug}`;
+          v.path = `/render?slug=${v.slug}&prefix=${sub}`;
         });
         arr.push(...res[sub]);
       });

@@ -2,7 +2,7 @@ import React, { FC, useContext, useMemo } from 'react';
 import { Link } from 'gatsby';
 import { resolve } from 'path';
 import { QueryContext } from '@/context';
-import { formattedPrefix, queryParse } from '@/helpers/utils';
+import { queryParse } from '@/helpers/utils';
 
 const config = require('../../../config');
 
@@ -31,7 +31,7 @@ export const SubCustomLink: FC<Props> = (props) => {
   const realRef = useMemo(() => {
     const slugs = slug.split('/').filter((v) => v);
     const newSlug = resolve(slugs.map((v) => `/${v}`).join('').replace(/[^/]+\/?$/, ''), href.replace(regExp, ''));
-    return `${formattedPrefix}/render?slug=${newSlug}&prefix=${prefix}`;
+    return `/render?slug=${newSlug}&prefix=${prefix}`;
   }, [slug, prefix]);
   if (regExp.test(href)) {
     return (

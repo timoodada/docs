@@ -55,7 +55,7 @@ exports.createPages = async ({ graphql, actions }) => {
 
   const { edges } = result.data.allMarkdownRemark;
   const searchMap = edges.map(({ node }) => {
-    const array = [];
+    let array = [];
     visit(node.htmlAst, ['element', 'text'], (value) => {
       if (!value) {
         return;
@@ -87,6 +87,7 @@ exports.createPages = async ({ graphql, actions }) => {
           array.push({
             l: value.tagName,
             t: text,
+            a: value.properties && value.properties.id,
             c: [],
           });
           break;
@@ -103,8 +104,16 @@ exports.createPages = async ({ graphql, actions }) => {
         default:
       }
     });
+    array = array.filter((v) => {
+      const level = v.l;
+      delete v.l;
+      if (level && /h(\d)/.test(level)) {
+        return Number(RegExp.$1) <= config.search.depth;
+      }
+      return true;
+    });
     array.forEach((v) => {
-      v.c = v.c.join('').split(/\n/).filter((s) => s);
+      v.c = v.c.join('').split(/\n/).map((s) => s.trim()).filter((s) => s);
     });
     return {
       id: node.fields.id,

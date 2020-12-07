@@ -1,13 +1,15 @@
 const { resolve } = require('path');
 
-let prefix = process.env.ES_PATH_PREFIX || '/';
+let prefix = process.env.NODE_ENV === 'production'
+  ? (process.env.GATSBY_PATH_PREFIX || '/')
+  : '/';
 
 if (prefix.indexOf('/') !== 0) {
   prefix = `/${prefix}`;
 }
 
 module.exports = {
-  isSubService: process.env.ES_IS_SUB_SERVICE || false,
+  isSubService: Number(process.env.GATSBY_IS_SUB_SERVICE) === 1,
   pathPrefix: prefix,
   markdownDir: `${__dirname}/content/`,
   siteMetadata: {
@@ -19,6 +21,9 @@ module.exports = {
     titles: ['English', '简体中文'],
     defaultLang: 'zh-CN',
   },
+  search: {
+    depth: 3,
+  },
   publicDir: resolve(__dirname, './public'),
   dataMapDir: 'data-i18n',
   theme: {
@@ -27,8 +32,8 @@ module.exports = {
   },
   development: {
     proxy: {
-      prefix: '/esguide-dr',
-      url: 'http://127.0.0.1',
+      prefix: '/edrs',
+      url: 'http://127.0.0.1:5555',
     },
   },
 };

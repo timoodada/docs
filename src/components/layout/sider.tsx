@@ -5,9 +5,10 @@ import { Layout, Menu } from 'antd';
 import { Link } from 'gatsby';
 import { QueryContext } from '@/context';
 import { buildMenu, getSubMenu, MenuData } from '@/helpers/menus';
-import { combineClassNames, queryParse } from '@/helpers/utils';
+import { combineClassNames } from '@/helpers/utils';
 import { tap } from 'rxjs/operators';
 import { openKeys as openKeysState, menuList, originMenuState } from '@/components/layout/menu.state';
+import { useCurrentSlug, useLang } from '@/hook';
 
 const config = require('../../../config');
 
@@ -20,16 +21,8 @@ export const Sider: FC<Props> = (props) => {
   const { className } = props;
   const { originMenu: contextOriginMenu, data, location } = useContext(QueryContext);
   const originMenu = originMenuState.use();
-  const search = queryParse(location.search);
-  let currentSlug = '';
-  let lang = config.i18n.defaultLang;
-  if (data?.markdownRemark?.fields) {
-    currentSlug = `${data.markdownRemark.fields.prefix}${data.markdownRemark.fields.slug}`;
-    lang = data.markdownRemark.fields.lang;
-  } else if (search?.prefix && search?.slug) {
-    currentSlug = `${search.prefix.replace(/\/$/, '')}${search.slug}`;
-    lang = search.lang;
-  }
+  const currentSlug = useCurrentSlug(data, location);
+  const lang = useLang(data, config.i18n.defaultLang);
   const [subMenus, setSubMenu] = useState([]);
 
   const render = useCallback((menuData: MenuData[]) => {

@@ -35,7 +35,11 @@
     "no-param-reassign": "off",
     "arrow-body-style": "off",
     "ban-ts-comment": "off",
-    "max-classes-per-file": "off"
+    "max-classes-per-file": "off",
+    "react/no-array-index-key": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
+    "react/no-danger": "off"
   },
   "overrides": [
     {

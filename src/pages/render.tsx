@@ -30,6 +30,14 @@ const SubServiceRender: FC = () => {
   const [newQueryContext, setNewQueryContext] = useState<any>(queryContext);
 
   useEffect(() => {
+    const { location } = queryContext;
+    if (location) {
+      setNewQueryContext((prevState) => {
+        return { ...prevState, location };
+      });
+    }
+  }, [queryContext]);
+  useEffect(() => {
     const slugs = slug.split('/').filter((v) => v);
     const prefixs = prefix.split('/').filter((v) => v);
     slugs.push('page-data.json');

@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 const config = require('../../config');
 
@@ -12,9 +12,18 @@ export const getSubServices = (): Observable<string[]> => {
   if (subServices.length) {
     return of(subServices);
   }
-  return of(['/esguide-dr']).pipe(
-    tap((res) => {
-      subServices = res;
+  return of(['/edrs/esguide']).pipe(
+    map((res) => {
+      subServices = res.map((v) => {
+        let ret: string;
+        if (v.indexOf('/') !== 0) {
+          ret = `/${v}`;
+        } else {
+          ret = v;
+        }
+        return ret.replace(/\/$/, '');
+      });
+      return subServices;
     }),
   );
 };

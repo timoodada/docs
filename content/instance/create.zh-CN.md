@@ -51,8 +51,6 @@ An enterprise-class UI design language and React UI library.
 
 [![](https://gw.alipayobjects.com/mdn/rms_08e378/afts/img/A*Yl83RJhUE7kAAAAAAAAAAABkARQnAQ)](https://ant.design)
 
-English | [Português](./README-pt_BR.md) | [简体中文](./README-zh_CN.md)
-
 ## ✨ Features
 
 - 🌈 Enterprise-class UI designed for web applications.
@@ -114,7 +112,6 @@ Dozens of languages supported in `antd`, see [i18n](https://ant.design/docs/reac
 - [Home page](https://ant.design/)
 - [Components Overview](https://ant.design/components/overview)
 - [Ant Design Pro](http://pro.ant.design/)
-- [Change Log](CHANGELOG.en-US.md)
 - [rc-components](http://react-component.github.io/)
 - [Mobile UI](http://mobile.ant.design)
 - [Ant Design Pro Components](https://procomponents.ant.design)
