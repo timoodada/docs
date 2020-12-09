@@ -23,86 +23,24 @@ html,body,#___gatsby,#gatsby-focus-wrapper{
 .root-layout{
   width: 100%;
   height: 100%;
-  overflow-y: auto;
   background: @body-background;
   min-width: 1200px;
   position: relative;
-  .root-header{
-    position: relative;
-    z-index: 10;
-    background: @body-background;
-    box-shadow: 0 2px 8px #f0f1f2;
-    padding: 0;
+  display: flex;
+  flex-direction: column;
+  .root-layout-content{
     display: flex;
-    align-items: center;
-    height: 64px;
-    .logo{
-      width: 280px;
-      flex: 0 0 280px;
-      display: flex;
-      align-content: center;
-      padding-left: 50px;
-      img{
-        width: 90px;
-      }
-    }
-    margin-bottom: 40px;
+    flex: 1;
+    height: 100%;
+    overflow: auto;
   }
-  .root-markdown-wrapper{
-    padding-left: 280px;
-  }
-  .root-remark-content{
+  .markdown-body{
     padding: 20px;
+    overflow: auto;
+    width: 100%;
+    flex: 1;
     img{
       max-width: 100%;
-    }
-  }
-  .root-layout-content{
-    position: relative;
-    min-height: calc(100% - 104px);
-  }
-  .root-sider-wrapper{
-    height: 100%;
-    top: 0;
-  }
-  .root-sider{
-    height: 100%;
-    .ant-menu-item,.ant-menu-item-group-title,.ant-menu-submenu-title{
-      padding-left: 40px !important;
-    }
-    .ant-menu-item-group-title{
-      margin: 16px 0;
-    }
-    .ant-menu-item-group-list{
-      & > .ant-menu-submenu{
-        .ant-menu-item{
-          padding-left: 50px !important;
-        }
-        & > .ant-menu{
-          *{
-            font-size: 12px;
-          }
-          .ant-menu-submenu-title{
-            padding-left: 50px !important;
-          }
-        }
-      }
-    }
-    & > .ant-layout-sider-children > .ant-menu{
-      height: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-    .ant-menu-item-group-title{
-      &:after{
-        position: relative;
-        top: 12px;
-        display: block;
-        width: calc(100% - 20px);
-        height: 1px;
-        background: #f0f0f0;
-        content: "";
-      }
     }
   }
 }

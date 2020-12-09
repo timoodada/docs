@@ -21,13 +21,15 @@ export const Layout: FC<Props> = (props) => {
   } = props;
 
   return (
-    <div className={combineClassNames('root-layout', className)} ref={layout}>
+    <section className={combineClassNames('root-layout', className)}>
       { header }
-      <div className="root-layout-content">
+      <section className="root-layout-content">
         { sider }
-        <div className="root-markdown-wrapper">{ children }</div>
-      </div>
-      <BackTop target={() => layout.current} />
-    </div>
+        <section className="markdown-body" ref={layout}>
+          { children }
+          <BackTop target={() => layout.current} />
+        </section>
+      </section>
+    </section>
   );
 };

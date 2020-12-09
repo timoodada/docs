@@ -1,0 +1,37 @@
+@import "src/common/styles/_theme";
+
+.root-header{
+  position: relative;
+  z-index: 10;
+  background: @body-background;
+  box-shadow: 0 2px 8px #f0f1f2;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  .logo{
+    width: 280px;
+    flex: 0 0 280px;
+    display: flex;
+    align-content: center;
+    padding-left: 50px;
+    img{
+      width: 90px;
+    }
+  }
+  .search-box-wrapper{
+    width: 240px;
+    flex: 0 0 240px;
+  }
+  .header-menu{
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 20px 0 0;
+    .lang-select{
+      width: 120px;
+      margin-left: 15px;
+    }
+  }
+}

@@ -2,10 +2,10 @@ import * as JsSearch from 'js-search';
 import { formattedPrefix } from '@/helpers/utils';
 import { get } from '@/helpers/http';
 import { Observable, of } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { catchError, concatMap } from 'rxjs/operators';
 
-const { getSearchMapPath } = require('../../utils');
-const { dataMapDir } = require('../../config');
+const { getSearchMapPath } = require('../../../utils');
+const { dataMapDir } = require('../../../config');
 
 interface SearchData {
   t: string;
@@ -15,10 +15,9 @@ interface SearchData {
   isSubService: boolean;
   slugWithPrefix: string;
 }
-interface FormattedData {
+interface FormattedData extends SearchData {
   parentTitle: string;
   slug: string;
-  t: string;
   k: string;
   c: string[];
 }
@@ -50,13 +49,24 @@ export class Search {
     this.formattedData = Search.formatData(data);
     this.dataToSearch = new JsSearch.Search('k');
     // this index strategy is built for all substrings matches.
-    this.dataToSearch.indexStrategy = new JsSearch.PrefixIndexStrategy();
+    this.dataToSearch.indexStrategy = new JsSearch.AllSubstringsIndexStrategy();
     /**
      * defines the sanitizer for the search
      * to prevent some of the words from being excluded
      *
      */
     this.dataToSearch.sanitizer = new JsSearch.LowerCaseSanitizer();
+    this.dataToSearch.tokenizer = {
+      tokenize(text: string) {
+        return text.split(/[^a-zа-яё0-9\-'\u4e00-\u9fa5]+/ig)
+          .filter((v) => v);
+      },
+    };
+    /**
+     * defines the search index
+     * read more in here https://github.com/bvaughn/js-search#configuring-the-search-index
+     */
+    this.dataToSearch.searchIndex = new JsSearch.TfIdfSearchIndex('k');
     // sets the index attribute for the data
     this.dataToSearch.addIndex(['t']);
     this.dataToSearch.addIndex(['c']);
@@ -64,15 +74,23 @@ export class Search {
     this.dataToSearch.addDocuments(this.formattedData);
   }
 
-  search(keyword: string): any[] {
+  search(keyword: string): FormattedData[] {
     return this.dataToSearch.search(keyword);
   }
 }
 
+interface SearchResults {
+  title: string;
+  slugWithPrefix: string;
+  slug: string;
+  prefix: string;
+  isSubService: string;
+  content: FormattedData[];
+}
 export class RemoteSearch {
   searchList: Search[] = [];
 
-  currentIndex = 0;
+  currentIndex = -1;
 
   mainSearchUrl: string;
 
@@ -82,9 +100,11 @@ export class RemoteSearch {
 
   numPerPage: number;
 
-  results = [];
+  results: FormattedData[] = [];
 
-  private static format(results: any[], keyword: string) {
+  keyword = '';
+
+  private static format(results: FormattedData[], keyword: string): SearchResults[] {
     const ret = [];
     results.forEach((v) => {
       const value = { ...v };
@@ -108,29 +128,19 @@ export class RemoteSearch {
     return ret;
   }
 
-  constructor(subServices: string[], lang: string, numPerPage = 8) {
-    this.subServices = subServices;
-    this.mainSearchUrl = getSearchMapPath(formattedPrefix, dataMapDir, lang);
-    this.subSearchUrl = subServices.map((v) => {
-      return getSearchMapPath(v, dataMapDir, lang);
-    });
-    this.numPerPage = numPerPage;
-  }
-
-  search(keyword: string): Observable<any[]> {
-    this.results = [];
-    this.currentIndex = 0;
-    return this.doSearch(keyword);
-  }
-
-  doSearch(keyword: string, skip = 0): Observable<any[]> {
-    for (; this.currentIndex < this.searchList.length; this.currentIndex += 1) {
-      const result = this.searchList[this.currentIndex].search(keyword);
+  private doSearch(skip = 0): Observable<SearchResults[]> {
+    while (this.currentIndex < this.searchList.length - 1) {
+      this.currentIndex += 1;
+      const result = this.searchList[this.currentIndex].search(this.keyword);
       this.results.push(...result);
+      const results = this.results.slice(skip, skip + this.numPerPage);
+      if (results.length >= this.numPerPage) {
+        return of(RemoteSearch.format(results, this.keyword));
+      }
     }
     const results = this.results.slice(skip, skip + this.numPerPage);
     if (results.length >= this.numPerPage) {
-      return of(RemoteSearch.format(results, keyword));
+      return of(RemoteSearch.format(results, this.keyword));
     }
     let searchUrl: string;
     let prefix: string;
@@ -143,7 +153,7 @@ export class RemoteSearch {
       prefix = this.subServices[this.searchList.length - 1];
     }
     if (!searchUrl) {
-      return of(RemoteSearch.format(results, keyword));
+      return of(RemoteSearch.format(results, this.keyword));
     }
     return get(searchUrl).pipe(
       concatMap((res) => {
@@ -153,8 +163,35 @@ export class RemoteSearch {
           v.isSubService = isSubService;
         });
         this.searchList.push(new Search(res));
-        return this.doSearch(keyword, skip);
+        return this.doSearch(skip);
+      }),
+      catchError((err) => {
+        // eslint-disable-next-line no-console
+        console.error(err);
+        return of([]);
       }),
     );
+  }
+
+  constructor(subServices: string[], lang: string) {
+    this.subServices = subServices;
+    this.mainSearchUrl = getSearchMapPath(formattedPrefix, dataMapDir, lang);
+    this.subSearchUrl = subServices.map((v) => {
+      return getSearchMapPath(v, dataMapDir, lang);
+    });
+  }
+
+  search(keyword: string, page = 0, numPerPage = 8): Observable<SearchResults[]> {
+    if (keyword !== this.keyword) {
+      this.results = [];
+      this.currentIndex = -1;
+    }
+    this.keyword = keyword;
+    this.numPerPage = numPerPage;
+    const ret = this.results.slice(numPerPage * page, numPerPage + numPerPage * page);
+    if (ret.length >= numPerPage) {
+      return of(RemoteSearch.format(ret, this.keyword));
+    }
+    return this.doSearch(numPerPage * page);
   }
 }

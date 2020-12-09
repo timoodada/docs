@@ -18,7 +18,6 @@ module.exports = {
   },
   i18n: {
     langs: ['en-US', 'zh-CN'],
-    titles: ['English', '简体中文'],
     defaultLang: 'zh-CN',
   },
   search: {
@@ -29,11 +28,5 @@ module.exports = {
   theme: {
     'primary-color': '#9382E3',
     'link-color': '#9382E3',
-  },
-  development: {
-    proxy: {
-      prefix: '/edrs',
-      url: 'http://127.0.0.1:5555',
-    },
   },
 };

@@ -1,4 +1,5 @@
 const config = require('./config');
+const proxyConf = require('./proxy.conf');
 // Since `gatsby-plugin-typescript` is automatically included in Gatsby you
 // don't need to define it here (just if you need to change the options)
 const plugins = [
@@ -140,5 +141,5 @@ module.exports = {
     dataMapDir: config.dataMapDir,
   },
   plugins,
-  proxy: config.development.proxy,
+  proxy: proxyConf.proxy,
 };

@@ -1,17 +1,19 @@
 import React, {
-  FC, useCallback, useContext, useEffect, useRef, useState,
+  FC, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { SearchOutlined } from '@ant-design/icons';
 import { debounce } from '@/helpers/utils';
 import './style.less';
 
 import { QueryContext } from '@/context';
-import { useLang } from '@/hook';
-import { RemoteSearch } from '@/helpers/search';
+import { RemoteSearch } from '@/components/search/search.core';
 import { getSubServices } from '@/helpers/sub-service';
-import { tap } from 'rxjs/operators';
-import { Popover } from 'antd';
+import { finalize, tap } from 'rxjs/operators';
+import { Popover, Empty } from 'antd';
 import { Link } from 'gatsby';
+import { searchInput } from '@/components/search/search.state';
+import { language } from '@/store/main-states';
+import { Loading } from '@/components/loading';
 
 const i18n = {
   'zh-CN': {
@@ -26,10 +28,11 @@ const i18n = {
 interface SearchContentProps {
   results: any[];
   keyword: string;
+  loading?: boolean;
 }
 
 const SearchContent: FC<SearchContentProps> = (props) => {
-  const { results, keyword } = props;
+  const { results, keyword, loading = false } = props;
 
   const replace = useCallback((str: string): string => {
     const reg = new RegExp(`(${keyword.split(/\s+/g).join('|')}|${keyword})`, 'ig');
@@ -52,31 +55,34 @@ const SearchContent: FC<SearchContentProps> = (props) => {
   const stopPropagation = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);
-
-  return (
-    <div
-      className="search-content-popover"
-      onClick={stopPropagation}
-    >
-      {
-        results.map((item) => {
-          return (
-            <div className="search-result-row" key={item.slugWithPrefix}>
-              <div
-                className="search-result-label"
-                title={item.title}
-              >
-                <Link to={linkTo(item)}>
-                  <span dangerouslySetInnerHTML={{ __html: replace(item.title) }} />
-                </Link>
-              </div>
-              <div className="search-result-content">
-                {
-                  item.content.map((content, key) => {
-                    return (
-                      <div className="search-result-sub-row" key={key}>
-                        {
-                          content.t ? (
+  const buildContent = useMemo(() => {
+    if (loading) {
+      return (
+        <div style={{ padding: 20 }}>
+          <Loading size="large" />
+        </div>
+      );
+    }
+    if (results.length) {
+      return results.map((item) => {
+        return (
+          <div className="search-result-row" key={item.slugWithPrefix}>
+            <div
+              className="search-result-label"
+              title={item.title}
+            >
+              <Link to={linkTo(item)}>
+                <span dangerouslySetInnerHTML={{ __html: replace(item.title) }} />
+              </Link>
+            </div>
+            <div className="search-result-content">
+              {
+                item.content.map((content, key) => {
+                  return (
+                    <div className="search-result-sub-row" key={key}>
+                      {
+                        content.t
+                          ? (
                             <>
                               <div
                                 className="search-result-sub-label search-result-label"
@@ -100,58 +106,74 @@ const SearchContent: FC<SearchContentProps> = (props) => {
                               </div>
                             </>
                           )
-                            : (
-                              <div className="search-result-no-label">
-                                {
-                                  content.c.map((v, k) => (
-                                    <p
-                                      className="search-result-sub-content-row"
-                                      key={k}
-                                      title={v}
-                                      dangerouslySetInnerHTML={{ __html: replace(v) }}
-                                    />
-                                  ))
-                                }
-                              </div>
-                            )
-                        }
-                      </div>
-                    );
-                  })
-                }
-              </div>
+                          : (
+                            <div className="search-result-no-label">
+                              {
+                                content.c.map((v, k) => (
+                                  <p
+                                    className="search-result-sub-content-row"
+                                    key={k}
+                                    title={v}
+                                    dangerouslySetInnerHTML={{ __html: replace(v) }}
+                                  />
+                                ))
+                              }
+                            </div>
+                          )
+                      }
+                    </div>
+                  );
+                })
+              }
             </div>
-          );
-        })
-      }
+          </div>
+        );
+      });
+    }
+    return (
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    );
+  }, [loading, results]);
+
+  return (
+    <div
+      className="search-content-popover"
+      onClick={stopPropagation}
+    >
+      { buildContent }
     </div>
   );
 };
 
 export const SearchBox: FC = () => {
-  const { data, location } = useContext(QueryContext);
-  const lang = useLang(data);
+  const { location } = useContext(QueryContext);
+  const lang = language.use();
   const remoteSearch = useRef<RemoteSearch>();
   const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [keyword, setKeyword] = useState('');
+  const keyword = searchInput.use();
+  const inputRef = useRef<HTMLInputElement>();
 
   const onSearch = useCallback((keywords: string) => {
     if (!keywords) {
+      setVisible(false);
       return;
     }
     setVisible(true);
     if (remoteSearch.current) {
+      setLoading(true);
       remoteSearch.current.search(keywords).pipe(
         tap((res) => {
           setResults(res);
         }),
+        finalize(() => setLoading(false)),
       ).subscribe();
     }
   }, []);
   const onChange = useCallback(debounce((e: React.ChangeEvent<HTMLElement>) => {
     const { value } = e.target as any;
-    setKeyword(value);
+    searchInput.set(value);
     onSearch(value);
   }, 500), [onSearch]);
   const onSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
@@ -167,11 +189,12 @@ export const SearchBox: FC = () => {
     if (!lang) {
       return;
     }
-    getSubServices().pipe(
+    const subscription = getSubServices().pipe(
       tap((res) => {
-        remoteSearch.current = new RemoteSearch(res, lang, 8);
+        remoteSearch.current = new RemoteSearch(res, lang);
       }),
     ).subscribe();
+    return () => subscription.unsubscribe();
   }, [lang]);
   useEffect(() => {
     const onDomClick = () => {
@@ -185,6 +208,11 @@ export const SearchBox: FC = () => {
   useEffect(() => {
     setVisible(false);
   }, [location]);
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.value = searchInput.getState();
+    }
+  }, []);
 
   return (
     <form
@@ -200,10 +228,12 @@ export const SearchBox: FC = () => {
           <SearchContent
             results={results}
             keyword={keyword}
+            loading={loading}
           />
         )}
       >
         <input
+          ref={inputRef}
           autoComplete="off"
           name="keywords"
           type="text"

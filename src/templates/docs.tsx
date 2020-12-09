@@ -1,15 +1,16 @@
-import React, { FC, useMemo } from 'react';
+import React, { FC, useEffect, useMemo } from 'react';
 import { graphql } from 'gatsby';
-import { ConfigProvider } from 'antd';
 import { Provider } from 'react-redux';
-import { Layout } from '@/components/layout';
 import { QueryContext } from '@/context';
-import zhCN from 'antd/lib/locale/zh_CN';
-import enUS from 'antd/lib/locale/en_US';
-import { Header } from '@/components/layout/header';
-import { Sider } from '@/components/layout/sider';
 import { CustomLink } from '@/components/custom-link';
 import { store } from '@/store';
+import zhCN from 'antd/lib/locale/zh_CN';
+import enUS from 'antd/lib/locale/en_US';
+import { Layout } from '@/components/layout';
+import { Header } from '@/components/header';
+import { Sider } from '@/components/sider';
+import { ConfigProvider } from 'antd';
+import { language } from '@/store/main-states';
 
 const RehypeReact = require('rehype-react');
 
@@ -29,34 +30,33 @@ interface Props {
     htmlAst: any;
   };
   location: any;
+  navigate: any;
+  custom404: any;
 }
 const MDRuntime: FC<Props> = (props) => {
   const {
-    data, pageContext, children, location,
+    data, pageContext, children,
   } = props;
+  // console.log(props);
 
-  const queryData = useMemo(() => {
-    return {
-      data,
-      pageContext,
-      location,
-      originMenu: pageContext?.menu || [],
-    };
-  }, [data, pageContext, location]);
+  const localeLang = language.getState();
+  useEffect(() => {
+    language.init();
+  }, []);
 
-  if (!data || !pageContext) {
-    return (
-      <Provider store={store}>
-        <QueryContext.Provider value={queryData}>{ children }</QueryContext.Provider>
-      </Provider>
-    );
-  }
+  const content = useMemo(() => {
+    if (pageContext?.htmlAst) {
+      return renderAst(pageContext.htmlAst);
+    }
+    return children;
+  }, [data, pageContext, children]);
+
   return (
     <Provider store={store}>
       <QueryContext.Provider
-        value={queryData}
+        value={props}
       >
-        <ConfigProvider locale={data.markdownRemark.fields.lang === 'zh-CN' ? zhCN : enUS}>
+        <ConfigProvider locale={localeLang === 'zh-CN' ? zhCN : enUS}>
           <Layout
             header={
               <Header />
@@ -65,7 +65,7 @@ const MDRuntime: FC<Props> = (props) => {
               <Sider />
             }
           >
-            <div className="root-remark-content markdown-body">{ renderAst(pageContext.htmlAst) }</div>
+            { content }
           </Layout>
         </ConfigProvider>
       </QueryContext.Provider>

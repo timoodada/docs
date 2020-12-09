@@ -57,9 +57,7 @@ exports.createPages = async ({ graphql, actions }) => {
   const searchMap = edges.map(({ node }) => {
     let array = [];
     visit(node.htmlAst, ['element', 'text'], (value) => {
-      if (!value) {
-        return;
-      }
+      if (!value) { return; }
       if (value.type === 'element' && value.tagName === 'a') {
         const regExp = new RegExp(`\\.(${config.i18n.langs.join('|')})\\.md`);
         if (
@@ -75,25 +73,26 @@ exports.createPages = async ({ graphql, actions }) => {
       if (value.type === 'element' && !/^h\d$/.test(value.tagName)) {
         return;
       }
-      let text = '';
-      if (Array.isArray(value.children)) {
-        const child = value.children.find((v) => v.type === 'text');
-        if (child) {
-          text = child.value;
-        }
-      }
+      let textVal = '';
       switch (value.type) {
         case 'element':
           array.push({
             l: value.tagName,
-            t: text,
+            t: null,
             a: value.properties && value.properties.id,
             c: [],
           });
           break;
         case 'text':
+          textVal = value.value && value.value.trim();
+          if (!textVal) { break; }
           if (array.length) {
-            array[array.length - 1].c.push(value.value);
+            const targetIndex = array.length - 1;
+            if (array[targetIndex].t) {
+              array[targetIndex].c.push(textVal);
+            } else {
+              array[targetIndex].t = textVal;
+            }
           } else {
             array.push({
               t: '',
@@ -107,7 +106,7 @@ exports.createPages = async ({ graphql, actions }) => {
     array = array.filter((v) => {
       const level = v.l;
       delete v.l;
-      if (level && /h(\d)/.test(level)) {
+      if (level && /^h(\d+)$/.test(level)) {
         return Number(RegExp.$1) <= config.search.depth;
       }
       return true;
@@ -125,13 +124,13 @@ exports.createPages = async ({ graphql, actions }) => {
   });
   const menu = {};
   config.i18n.langs.forEach((item) => {
-    const searchData = searchMap.filter((v) => v.lang === item || !v.lang).map((v) => ({
+    const searchData = searchMap.filter((v) => v.lang === item).map((v) => ({
       t: v.title,
       s: v.slug,
       r: v.rawBody,
     }));
     const menuData = edges.filter(({ node }) => {
-      return node.fields.lang === item || !node.fields.lang;
+      return node.fields.lang === item;
     }).map(({ node }) => ({
       title: node.fields.title,
       slug: node.fields.slug,
@@ -166,14 +165,14 @@ exports.onCreateNode = ({ node, getNode, actions }) => {
 
     const langAndUrl = getLang(value);
 
-    if (langAndUrl.length === 2) {
+    if (langAndUrl && langAndUrl.length === 2) {
       value = `${langAndUrl[1]}/${langAndUrl[0]}`;
-      createNodeField({
-        name: 'lang',
-        node,
-        value: langAndUrl[1],
-      });
     }
+    createNodeField({
+      name: 'lang',
+      node,
+      value: (langAndUrl && langAndUrl[1]) || config.i18n.defaultLang,
+    });
 
     value = value.replace(/\/index$/, '');
     if (value === config.i18n.defaultLang) {

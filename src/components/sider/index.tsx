@@ -4,11 +4,19 @@ import React, {
 import { Layout, Menu } from 'antd';
 import { Link } from 'gatsby';
 import { QueryContext } from '@/context';
-import { buildMenu, getSubMenu, MenuData } from '@/helpers/menus';
 import { combineClassNames } from '@/helpers/utils';
 import { tap } from 'rxjs/operators';
-import { openKeys as openKeysState, menuList, originMenuState } from '@/components/layout/menu.state';
-import { useCurrentSlug, useLang } from '@/hook';
+import {
+  openKeys as openKeysState,
+  menuList,
+  originMenuState,
+  buildMenu,
+  getSubMenu,
+  MenuData,
+} from '@/components/sider/menu.state';
+import { useCurrentSlug } from '@/hook';
+import { language } from '@/store/main-states';
+import './style.less';
 
 const config = require('../../../config');
 
@@ -19,10 +27,10 @@ interface Props {
 }
 export const Sider: FC<Props> = (props) => {
   const { className } = props;
-  const { originMenu: contextOriginMenu, data, location } = useContext(QueryContext);
+  const { data, location, pageContext } = useContext(QueryContext);
   const originMenu = originMenuState.use();
   const currentSlug = useCurrentSlug(data, location);
-  const lang = useLang(data, config.i18n.defaultLang);
+  const localeLang = language.use();
   const [subMenus, setSubMenu] = useState([]);
 
   const render = useCallback((menuData: MenuData[]) => {
@@ -68,11 +76,15 @@ export const Sider: FC<Props> = (props) => {
   const onOpenChange = useCallback((keys: string[]) => {
     openKeysState.set(keys);
   }, []);
+
   useEffect(() => {
-    if (contextOriginMenu && contextOriginMenu.length) {
-      originMenuState.set(contextOriginMenu);
+    originMenuState.init(localeLang);
+  }, [localeLang]);
+  useEffect(() => {
+    if (pageContext.menu) {
+      originMenuState.set(pageContext.menu);
     }
-  }, [contextOriginMenu]);
+  }, [pageContext]);
   useEffect(() => {
     setSelectedKeys([currentSlug]);
   }, [currentSlug]);
@@ -83,12 +95,13 @@ export const Sider: FC<Props> = (props) => {
     if (config.isSubService) {
       return;
     }
-    getSubMenu(lang).pipe(
+    const subscription = getSubMenu(localeLang).pipe(
       tap((res) => {
         setSubMenu(res);
       }),
     ).subscribe();
-  }, [lang]);
+    return () => subscription.unsubscribe();
+  }, [localeLang]);
   useEffect(() => {
     menuList.set(buildMenu(originMenu.concat(subMenus)));
   }, [originMenu, subMenus]);
@@ -96,13 +109,10 @@ export const Sider: FC<Props> = (props) => {
   return (
     <div
       className="root-sider-wrapper"
-      style={{
-        position: 'absolute',
-      }}
     >
       <AntSider
         trigger={null}
-        width={280}
+        width={260}
         theme="light"
         className={combineClassNames('root-sider', className)}
       >

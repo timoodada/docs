@@ -4,15 +4,12 @@ import React, {
 import { QueryContext } from '@/context';
 import { queryParse } from '@/helpers/utils';
 import { get } from '@/helpers/http';
-import { concatMap, tap } from 'rxjs/operators';
-import { getMainMenu } from '@/helpers/menus';
-import { ConfigProvider } from 'antd';
-import zhCN from 'antd/lib/locale/zh_CN';
-import enUS from 'antd/lib/locale/en_US';
-import { Layout } from '@/components/layout';
-import { Header } from '@/components/layout/header';
-import { Sider } from '@/components/layout/sider';
+import { catchError, finalize, tap } from 'rxjs/operators';
 import { SubCustomLink } from '@/components/custom-link';
+import { originMenuState } from '@/components/sider/menu.state';
+import { language } from '@/store/main-states';
+import { throwError } from 'rxjs';
+import { Loading } from '@/components/loading';
 
 const RehypeReact = require('rehype-react');
 
@@ -28,6 +25,9 @@ const SubServiceRender: FC = () => {
   const query = queryParse(queryContext.location.search);
   const { slug, prefix } = query;
   const [newQueryContext, setNewQueryContext] = useState<any>(queryContext);
+  const [ast, setAst] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const localeLang = language.use();
 
   useEffect(() => {
     const { location } = queryContext;
@@ -38,63 +38,51 @@ const SubServiceRender: FC = () => {
     }
   }, [queryContext]);
   useEffect(() => {
+    if (!slug || !prefix) {
+      return;
+    }
     const slugs = slug.split('/').filter((v) => v);
     const prefixs = prefix.split('/').filter((v) => v);
     slugs.push('page-data.json');
-    slugs.unshift('page-data');
-    slugs.unshift(...prefixs);
-    get(slugs.map((v) => `/${v}`).join('')).pipe(
+    slugs.unshift(...prefixs, 'page-data');
+    setLoading(true);
+    const subscription = get(slugs.map((v) => `/${v}`).join('')).pipe(
       tap((res) => {
         setNewQueryContext((prevState) => {
           return {
             ...prevState,
             data: res.result.data,
-            pageContext: res.result.pageContext,
           };
         });
+        setAst(res.result?.pageContext?.htmlAst);
       }),
-      concatMap((res) => {
-        return getMainMenu(res.result.data.markdownRemark.fields.lang).pipe(
-          tap((menus) => {
-            setNewQueryContext((prevState) => {
-              return {
-                ...prevState,
-                originMenu: menus,
-              };
-            });
-          }),
-        );
+      catchError((e) => {
+        return throwError(e);
       }),
+      finalize(() => setLoading(false)),
     ).subscribe();
+    return () => subscription.unsubscribe();
   }, [slug, prefix]);
+  useEffect(() => {
+    if (!localeLang) {
+      return;
+    }
+    const subscription = originMenuState.getMainMenu(localeLang).subscribe();
+    return () => subscription.unsubscribe();
+  }, [localeLang]);
 
   return (
-    <>
-      <QueryContext.Provider
-        value={newQueryContext}
-      >
-        <ConfigProvider locale={newQueryContext?.data?.markdownRemark?.fields?.lang === 'zh-CN' ? zhCN : enUS}>
-          <Layout
-            header={
-              <Header />
-            }
-            sider={
-              <Sider />
-            }
-          >
-            <div
-              className="root-remark-content markdown-body"
-            >
-              {
-                newQueryContext?.pageContext?.htmlAst
-                  ? renderAst(newQueryContext.pageContext.htmlAst)
-                  : null
-              }
-            </div>
-          </Layout>
-        </ConfigProvider>
-      </QueryContext.Provider>
-    </>
+    <QueryContext.Provider
+      value={newQueryContext}
+    >
+      {
+        loading ?
+          <Loading size="large" /> :
+          ast ?
+            renderAst(ast) :
+            <div>404</div>
+      }
+    </QueryContext.Provider>
   );
 };
 

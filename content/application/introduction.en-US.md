@@ -1,5 +1,5 @@
 ---
-title: "简介"
+title: "Introduction"
 ---
 <p align="center">
   <a href="http://ng.ant.design">
@@ -33,8 +33,6 @@ An enterprise-class Angular UI component library based on Ant Design.
 
 English | [简体中文](README-zh_CN.md)
 
-# 数据保护组
-创建数据保护组
 
 ## ✨ Features
 
