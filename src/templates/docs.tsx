@@ -41,8 +41,8 @@ const MDRuntime: FC<Props> = (props) => {
 
   const localeLang = language.getState();
   useEffect(() => {
-    language.init();
-  }, []);
+    language.init(pageContext?.lang);
+  }, [pageContext]);
 
   const content = useMemo(() => {
     if (pageContext?.htmlAst) {
