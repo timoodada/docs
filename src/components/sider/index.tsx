@@ -78,11 +78,13 @@ export const Sider: FC<Props> = (props) => {
   }, []);
 
   useEffect(() => {
-    originMenuState.init(localeLang);
+    if (localeLang) {
+      originMenuState.init(localeLang);
+    }
   }, [localeLang]);
   useEffect(() => {
-    if (pageContext.menu) {
-      originMenuState.set(pageContext.menu);
+    if (pageContext.menu && pageContext.lang) {
+      originMenuState.syncSet(pageContext.menu, pageContext.lang);
     }
   }, [pageContext]);
   useEffect(() => {

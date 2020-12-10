@@ -4,12 +4,9 @@ import { Provider } from 'react-redux';
 import { QueryContext } from '@/context';
 import { CustomLink } from '@/components/custom-link';
 import { store } from '@/store';
-import zhCN from 'antd/lib/locale/zh_CN';
-import enUS from 'antd/lib/locale/en_US';
 import { Layout } from '@/components/layout';
 import { Header } from '@/components/header';
 import { Sider } from '@/components/sider';
-import { ConfigProvider } from 'antd';
 import { language } from '@/store/main-states';
 
 const RehypeReact = require('rehype-react');
@@ -37,11 +34,13 @@ const MDRuntime: FC<Props> = (props) => {
   const {
     data, pageContext, children,
   } = props;
-  // console.log(props);
+  console.log(props);
 
-  const localeLang = language.getState();
   useEffect(() => {
     language.init(pageContext?.lang);
+    if (pageContext?.lang) {
+      language.setLangSilent(pageContext.lang);
+    }
   }, [pageContext]);
 
   const content = useMemo(() => {
@@ -56,18 +55,16 @@ const MDRuntime: FC<Props> = (props) => {
       <QueryContext.Provider
         value={props}
       >
-        <ConfigProvider locale={localeLang === 'zh-CN' ? zhCN : enUS}>
-          <Layout
-            header={
-              <Header />
-            }
-            sider={
-              <Sider />
-            }
-          >
-            { content }
-          </Layout>
-        </ConfigProvider>
+        <Layout
+          header={
+            <Header />
+          }
+          sider={
+            <Sider />
+          }
+        >
+          { content }
+        </Layout>
       </QueryContext.Provider>
     </Provider>
   );

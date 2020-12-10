@@ -139,8 +139,8 @@ exports.createPages = async ({ graphql, actions }) => {
     }));
     const formattedMenu = buildMenuData(menuData);
     menu[item] = formattedMenu;
-    outPutJsonTo(resolve(config.publicDir, getSearchMapPath('./', config.dataMapDir, item)), searchData);
-    outPutJsonTo(resolve(config.publicDir, getMenuMapPath('./', config.dataMapDir, item)), formattedMenu);
+    outPutJsonTo(resolve(process.cwd(), config.publicDir, getSearchMapPath('./', config.dataMapDir, item)), searchData);
+    outPutJsonTo(resolve(process.cwd(), config.publicDir, getMenuMapPath('./', config.dataMapDir, item)), formattedMenu);
   });
 
   // Create blog posts pages.

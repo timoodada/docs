@@ -1,5 +1,3 @@
-const { resolve } = require('path');
-
 let prefix = process.env.NODE_ENV === 'production'
   ? (process.env.GATSBY_PATH_PREFIX || '/')
   : '/';
@@ -11,7 +9,7 @@ if (prefix.indexOf('/') !== 0) {
 module.exports = {
   isSubService: Number(process.env.GATSBY_IS_SUB_SERVICE) === 1,
   pathPrefix: prefix,
-  markdownDir: `${__dirname}/content/`,
+  markdownDir: './content/',
   siteMetadata: {
     title: 'EasyStack',
     description: 'EasyStack Guides',
@@ -23,7 +21,7 @@ module.exports = {
   search: {
     depth: 3,
   },
-  publicDir: resolve(__dirname, './public'),
+  publicDir: './public',
   dataMapDir: 'data-i18n',
   theme: {
     'primary-color': '#9382E3',

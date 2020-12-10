@@ -140,6 +140,15 @@ class OriginMenu extends Spells<MenuData[]> {
     this.set(JSON.parse(sessionStorage.getItem(`${MAIN_MENU}_${lang}`)) || []);
   }
 
+  cache(data: MenuData[], lang: string) {
+    sessionStorage.setItem(`${MAIN_MENU}_${lang}`, JSON.stringify(data));
+  }
+
+  syncSet(data: MenuData[], lang: string) {
+    this.cache(data, lang);
+    this.set(data);
+  }
+
   @Boom
   getMainMenu(lang: string): Observable<MenuData[]> {
     const str = sessionStorage.getItem(`${MAIN_MENU}_${lang}`);
@@ -153,7 +162,12 @@ class OriginMenu extends Spells<MenuData[]> {
     }
     return get(getMenuMapPath(config.pathPrefix, config.dataMapDir, lang)).pipe(
       tap((res) => {
-        sessionStorage.setItem(`${MAIN_MENU}_${lang}`, JSON.stringify(res));
+        this.cache(res, lang);
+      }),
+      catchError((err) => {
+        // eslint-disable-next-line no-console
+        console.error(err);
+        return of(err);
       }),
     );
   }
