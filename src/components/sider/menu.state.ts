@@ -17,9 +17,12 @@ export interface MenuData {
   title: string;
   slug: string;
   path: string;
+  type: string;
+  main: boolean;
   slugWithPrefix: string;
   order: number;
   parent?: string;
+  parentWithPrefix?: string;
   children?: this[];
 }
 
@@ -28,16 +31,13 @@ type MenuOpenKeysType = string[];
 export const buildMenu = (originMenu: MenuData[]): MenuData[] => {
   originMenu = originMenu.slice(0);
   originMenu.forEach((v) => {
-    if (!v.path) {
-      v.path = v.slug;
-    }
-    if (!v.slugWithPrefix) {
-      v.slugWithPrefix = `${formattedPrefix}${v.slug}`;
-    }
     v.children = [];
   });
   originMenu.sort((a, b) => {
     let boo: boolean;
+    if (a.main || b.main) {
+      return a.main ? -1 : 1;
+    }
     if (a.order === b.order) {
       boo = a.slugWithPrefix < b.slugWithPrefix;
     } else if (a.order * b.order > 0) {
@@ -50,10 +50,10 @@ export const buildMenu = (originMenu: MenuData[]): MenuData[] => {
   const menus = [];
   for (let i = 0; i < originMenu.length; i += 1) {
     const item = originMenu[i];
-    if (!item.parent) {
+    if (!item.parentWithPrefix) {
       menus.push(item);
     } else {
-      const parent = originMenu.find((v) => v.slug === item.parent);
+      const parent = originMenu.find((v) => v.slugWithPrefix === item.parentWithPrefix);
       if (parent) {
         parent.children.push(item);
       }
@@ -79,11 +79,6 @@ export const updateSubMenu = (
     map((menus) => {
       const menuMap: any = {};
       menus.forEach((menu, key) => {
-        menu.forEach((v) => {
-          if (v.order === -1) {
-            v.order = -2;
-          }
-        });
         menuMap[subServices[key]] = menu;
       });
       sessionStorage.setItem(`${SUB_SERVICE_MENU}_${lang}`, JSON.stringify(menuMap));
@@ -117,6 +112,7 @@ export const getSubMenu = (lang: string): Observable<MenuData[]> => {
       Object.keys(res).forEach((sub) => {
         res[sub].forEach((v) => {
           v.slugWithPrefix = `${sub}${v.slug}`;
+          v.parentWithPrefix = v.parent && `${sub}${v.parent}`;
           v.path = `/render?slug=${v.slug}&prefix=${sub}`;
         });
         arr.push(...res[sub]);
@@ -137,7 +133,28 @@ export const menuList = new MenuList();
 @Jinx<MenuData[]>('originMenu', [])
 class OriginMenu extends Spells<MenuData[]> {
   init(lang: string) {
-    this.set(JSON.parse(sessionStorage.getItem(`${MAIN_MENU}_${lang}`)) || []);
+    let list = [];
+    try {
+      list = this.filter(JSON.parse(sessionStorage.getItem(`${MAIN_MENU}_${lang}`)));
+    } catch (err) {
+      //
+    }
+    this.set(list);
+  }
+
+  filter(list: MenuData[]): MenuData[] {
+    const root = list.find((v) => v.type === 'root');
+    list = list.filter((v) => v.type !== 'root');
+    list.forEach((v) => {
+      v.main = true;
+      v.slugWithPrefix = `${formattedPrefix}${v.slug}`;
+      v.path = v.slug;
+      if (root && v.parent === root.slug) {
+        delete v.parent;
+      }
+      v.parentWithPrefix = v.parent && `${formattedPrefix}${v.parent}`;
+    });
+    return list;
   }
 
   cache(data: MenuData[], lang: string) {
@@ -146,7 +163,7 @@ class OriginMenu extends Spells<MenuData[]> {
 
   syncSet(data: MenuData[], lang: string) {
     this.cache(data, lang);
-    this.set(data);
+    this.set(this.filter(data));
   }
 
   @Boom
@@ -154,7 +171,7 @@ class OriginMenu extends Spells<MenuData[]> {
     const str = sessionStorage.getItem(`${MAIN_MENU}_${lang}`);
     try {
       if (str) {
-        return of(JSON.parse(str));
+        return of(this.filter(JSON.parse(str)));
       }
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -167,7 +184,10 @@ class OriginMenu extends Spells<MenuData[]> {
       catchError((err) => {
         // eslint-disable-next-line no-console
         console.error(err);
-        return of(err);
+        return of([]);
+      }),
+      map((res) => {
+        return this.filter(res);
       }),
     );
   }
