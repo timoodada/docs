@@ -6,7 +6,7 @@ import { debounce } from '@/helpers/utils';
 import './style.less';
 
 import { QueryContext } from '@/context';
-import { RemoteSearch } from '@/components/search/search.core';
+import { RemoteSearch, SearchResults } from '@/components/search/search.core';
 import { getSubServices } from '@/helpers/sub-service';
 import { finalize, tap } from 'rxjs/operators';
 import { Popover, Empty } from 'antd';
@@ -145,32 +145,41 @@ const SearchContent: FC<SearchContentProps> = (props) => {
   );
 };
 
-export const SearchBox: FC = () => {
-  const { location } = useContext(QueryContext);
+interface SearchInputProps {
+  onLoading?: (loading: boolean) => void;
+  onResult?: (results: SearchResults[]) => void;
+  onKeywordsChange?: (keywords: string) => void;
+}
+export const SearchInput: FC<SearchInputProps> = (props) => {
+  const { onLoading, onResult, onKeywordsChange } = props;
   const lang = language.use();
-  const remoteSearch = useRef<RemoteSearch>();
-  const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const keyword = searchInput.use();
   const inputRef = useRef<HTMLInputElement>();
-
+  const remoteSearch = useRef<RemoteSearch>();
   const onSearch = useCallback((keywords: string) => {
+    if (typeof onKeywordsChange === 'function') {
+      onKeywordsChange(keywords);
+    }
     if (!keywords) {
-      setVisible(false);
       return;
     }
-    setVisible(true);
     if (remoteSearch.current) {
-      setLoading(true);
+      if (typeof onLoading === 'function') {
+        onLoading(true);
+      }
       remoteSearch.current.search(keywords).pipe(
         tap((res) => {
-          setResults(res);
+          if (typeof onResult === 'function') {
+            onResult(res);
+          }
         }),
-        finalize(() => setLoading(false)),
+        finalize(() => {
+          if (typeof onLoading === 'function') {
+            onLoading(false);
+          }
+        }),
       ).subscribe();
     }
-  }, []);
+  }, [onKeywordsChange, onLoading, onResult]);
   const onChange = useCallback(debounce((e: React.ChangeEvent<HTMLElement>) => {
     const { value } = e.target as any;
     searchInput.set(value);
@@ -197,18 +206,6 @@ export const SearchBox: FC = () => {
     return () => subscription.unsubscribe();
   }, [lang]);
   useEffect(() => {
-    const onDomClick = () => {
-      setVisible(false);
-    };
-    document.body.addEventListener('click', onDomClick);
-    return () => {
-      document.body.removeEventListener('click', onDomClick);
-    };
-  }, []);
-  useEffect(() => {
-    setVisible(false);
-  }, [location]);
-  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.value = searchInput.getState();
     }
@@ -220,28 +217,56 @@ export const SearchBox: FC = () => {
       onSubmit={onSubmit}
     >
       <SearchOutlined className="search-icon" />
-      <Popover
-        visible={visible}
-        title={null}
-        placement="bottom"
-        content={(
-          <SearchContent
-            results={results}
-            keyword={keyword}
-            loading={loading}
-          />
-        )}
-      >
-        <input
-          ref={inputRef}
-          autoComplete="off"
-          name="keywords"
-          type="text"
-          placeholder={i18n[lang]?.placeholder || ''}
-          onClick={stopPropagation}
-          onChange={onChange}
-        />
-      </Popover>
+      <input
+        ref={inputRef}
+        autoComplete="off"
+        name="keywords"
+        type="text"
+        placeholder={i18n[lang]?.placeholder || ''}
+        onClick={stopPropagation}
+        onChange={onChange}
+      />
     </form>
+  );
+};
+
+export const SearchBox: FC = () => {
+  const { location } = useContext(QueryContext);
+  const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
+  const keyword = searchInput.use();
+  useEffect(() => {
+    const onDomClick = () => {
+      setVisible(false);
+    };
+    document.body.addEventListener('click', onDomClick);
+    return () => {
+      document.body.removeEventListener('click', onDomClick);
+    };
+  }, []);
+  useEffect(() => {
+    setVisible(false);
+  }, [location]);
+
+  return (
+    <Popover
+      visible={visible}
+      title={null}
+      placement="bottom"
+      content={(
+        <SearchContent
+          results={results}
+          keyword={keyword}
+          loading={loading}
+        />
+      )}
+    >
+      <SearchInput
+        onLoading={(boo) => setLoading(boo)}
+        onKeywordsChange={(str) => setVisible(!!str)}
+        onResult={(res) => setResults(res)}
+      />
+    </Popover>
   );
 };

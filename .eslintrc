@@ -43,7 +43,8 @@
     "class-methods-use-this": "off",
     "consistent-return": "off",
     "no-nested-ternary": "off",
-    "operator-linebreak": "off"
+    "operator-linebreak": "off",
+    "max-len": "off"
   },
   "overrides": [
     {

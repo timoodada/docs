@@ -3,6 +3,7 @@ const startCase = require('lodash.startcase');
 const { resolve } = require('path');
 const visit = require('unist-util-visit');
 const fse = require('fs-extra');
+const mdAstToString = require('mdast-util-to-string');
 const { getLang } = require('./i18n');
 const config = require('./config');
 const { getSearchMapPath, getMenuMapPath, buildMenuData } = require('./utils');
@@ -73,26 +74,18 @@ exports.createPages = async ({ graphql, actions }) => {
       if (value.type === 'element' && !/^h\d$/.test(value.tagName)) {
         return;
       }
-      let textVal = '';
       switch (value.type) {
         case 'element':
           array.push({
             l: value.tagName,
-            t: null,
+            t: mdAstToString(value),
             a: value.properties && value.properties.id,
             c: [],
           });
           break;
         case 'text':
-          textVal = value.value && value.value.trim();
-          if (!textVal) { break; }
           if (array.length) {
-            const targetIndex = array.length - 1;
-            if (array[targetIndex].t) {
-              array[targetIndex].c.push(textVal);
-            } else {
-              array[targetIndex].t = textVal;
-            }
+            array[array.length - 1].c.push(mdAstToString(value));
           } else {
             array.push({
               t: '',
@@ -112,7 +105,7 @@ exports.createPages = async ({ graphql, actions }) => {
       return true;
     });
     array.forEach((v) => {
-      v.c = v.c.join('').split(/\n/).map((s) => s.trim()).filter((s) => s);
+      v.c = v.c.join('').split(/\n/g).map((s) => s.trim()).filter((s) => s);
     });
     return {
       id: node.fields.id,

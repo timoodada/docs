@@ -1908,7 +1908,7 @@
   resolved "https://registry.npm.taobao.org/@types/lodash/download/@types/lodash-4.14.165.tgz#74d55d947452e2de0742bad65270433b63a8c30f"
   integrity sha1-dNVdlHRS4t4HQrrWUnBDO2Ooww8=
 
-"@types/mdast@^3.0.0", "@types/mdast@^3.0.3":
+"@types/mdast@^3.0.3":
   version "3.0.3"
   resolved "https://registry.npm.taobao.org/@types/mdast/download/@types/mdast-3.0.3.tgz#2d7d671b1cd1ea3deb306ea75036c2a0407d2deb"
   integrity sha1-LX1nGxzR6j3rMG6nUDbCoEB9Les=
@@ -9471,27 +9471,6 @@ mdast-util-definitions@^1.2.0, mdast-util-definitions@^1.2.5:
   dependencies:
     unist-util-visit "^1.0.0"
 
-mdast-util-definitions@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npm.taobao.org/mdast-util-definitions/download/mdast-util-definitions-4.0.0.tgz?cache=0&sync_timestamp=1601720630319&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fmdast-util-definitions%2Fdownload%2Fmdast-util-definitions-4.0.0.tgz#c5c1a84db799173b4dcf7643cda999e440c24db2"
-  integrity sha1-xcGoTbeZFztNz3ZDzamZ5EDCTbI=
-  dependencies:
-    unist-util-visit "^2.0.0"
-
-mdast-util-to-hast@^10.0.1:
-  version "10.0.1"
-  resolved "https://registry.npm.taobao.org/mdast-util-to-hast/download/mdast-util-to-hast-10.0.1.tgz#0cfc82089494c52d46eb0e3edb7a4eb2aea021eb"
-  integrity sha1-DPyCCJSUxS1G6w4+23pOsq6gIes=
-  dependencies:
-    "@types/mdast" "^3.0.0"
-    "@types/unist" "^2.0.0"
-    mdast-util-definitions "^4.0.0"
-    mdurl "^1.0.0"
-    unist-builder "^2.0.0"
-    unist-util-generated "^1.0.0"
-    unist-util-position "^3.0.0"
-    unist-util-visit "^2.0.0"
-
 mdast-util-to-hast@^3.0.4:
   version "3.0.4"
   resolved "https://registry.npm.taobao.org/mdast-util-to-hast/download/mdast-util-to-hast-3.0.4.tgz#132001b266031192348d3366a6b011f28e54dc40"
@@ -9552,7 +9531,7 @@ mdn-data@2.0.4:
   resolved "https://registry.npm.taobao.org/mdn-data/download/mdn-data-2.0.4.tgz#699b3c38ac6f1d728091a64650b65d388502fd5b"
   integrity sha1-aZs8OKxvHXKAkaZGULZdOIUC/Vs=
 
-mdurl@^1.0.0, mdurl@^1.0.1:
+mdurl@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npm.taobao.org/mdurl/download/mdurl-1.0.1.tgz#fe85b2ec75a59037f2adfec100fd6c601761152e"
   integrity sha1-/oWy7HWlkDfyrf7BAP1sYBdhFS4=
@@ -14485,12 +14464,7 @@ unist-builder@^1.0.1:
   dependencies:
     object-assign "^4.1.0"
 
-unist-builder@^2.0.0:
-  version "2.0.3"
-  resolved "https://registry.npm.taobao.org/unist-builder/download/unist-builder-2.0.3.tgz#77648711b5d86af0942f334397a33c5e91516436"
-  integrity sha1-d2SHEbXYavCULzNDl6M8XpFRZDY=
-
-unist-util-generated@^1.0.0, unist-util-generated@^1.1.0:
+unist-util-generated@^1.1.0:
   version "1.1.6"
   resolved "https://registry.npm.taobao.org/unist-util-generated/download/unist-util-generated-1.1.6.tgz#5ab51f689e2992a472beb1b35f2ce7ff2f324d4b"
   integrity sha1-WrUfaJ4pkqRyvrGzXyzn/y8yTUs=

@@ -79,7 +79,7 @@ export class Search {
   }
 }
 
-interface SearchResults {
+export interface SearchResults {
   title: string;
   slugWithPrefix: string;
   slug: string;
@@ -168,7 +168,7 @@ export class RemoteSearch {
       catchError((err) => {
         // eslint-disable-next-line no-console
         console.error(err);
-        return of([]);
+        return of(RemoteSearch.format(results, this.keyword));
       }),
     );
   }

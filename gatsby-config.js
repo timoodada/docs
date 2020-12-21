@@ -5,12 +5,6 @@ const proxyConf = require('./proxy.conf');
 // don't need to define it here (just if you need to change the options)
 const plugins = [
   'gatsby-plugin-sharp-es',
-  {
-    resolve: 'gatsby-plugin-layout',
-    options: {
-      component: require.resolve('./src/templates/docs.tsx'),
-    },
-  },
   'gatsby-plugin-react-helmet',
   {
     resolve: 'gatsby-source-filesystem',

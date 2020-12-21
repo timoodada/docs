@@ -1,5 +1,5 @@
 import React, {
-  FC, useContext, useEffect, useState,
+  FC, useEffect, useState,
 } from 'react';
 import { QueryContext } from '@/context';
 import { queryParse } from '@/helpers/utils';
@@ -10,6 +10,11 @@ import { originMenuState } from '@/components/sider/menu.state';
 import { language } from '@/store/main-states';
 import { throwError } from 'rxjs';
 import { Loading } from '@/components/loading';
+import { Provider } from 'react-redux';
+import { store } from '@/store';
+import { Header } from '@/components/header';
+import { Sider } from '@/components/sider';
+import { Layout } from '@/components/layout';
 
 const RehypeReact = require('rehype-react');
 
@@ -20,23 +25,15 @@ const renderAst = new RehypeReact({
   },
 }).Compiler;
 
-const SubServiceRender: FC = () => {
-  const queryContext = useContext(QueryContext);
-  const query = queryParse(queryContext.location.search);
+const SubServiceRender: FC<any> = (props) => {
+  const { location } = props;
+  const query = queryParse(location.search);
   const { slug, prefix } = query;
-  const [newQueryContext, setNewQueryContext] = useState<any>(queryContext);
+  const [newQueryContext, setNewQueryContext] = useState<any>(props);
   const [ast, setAst] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const localeLang = language.use();
 
-  useEffect(() => {
-    const { location } = queryContext;
-    if (location) {
-      setNewQueryContext((prevState) => {
-        return { ...prevState, location };
-      });
-    }
-  }, [queryContext]);
   useEffect(() => {
     if (!slug || !prefix) {
       return;
@@ -64,6 +61,9 @@ const SubServiceRender: FC = () => {
     return () => subscription.unsubscribe();
   }, [slug, prefix]);
   useEffect(() => {
+    language.init();
+  }, []);
+  useEffect(() => {
     if (!localeLang) {
       return;
     }
@@ -75,15 +75,32 @@ const SubServiceRender: FC = () => {
     <QueryContext.Provider
       value={newQueryContext}
     >
-      {
-        loading ?
-          <Loading size="large" /> :
-          ast ?
-            renderAst(ast) :
-            <div>404</div>
-      }
+      <Layout
+        header={
+          <Header />
+        }
+        sider={
+          <Sider />
+        }
+      >
+        {
+          loading ?
+            <Loading size="large" /> :
+            ast ?
+              renderAst(ast) :
+              <div>404</div>
+        }
+      </Layout>
     </QueryContext.Provider>
   );
 };
 
-export default SubServiceRender;
+const WrappedProvider: FC = (props) => {
+  return (
+    <Provider store={store}>
+      <SubServiceRender {...props} />
+    </Provider>
+  );
+};
+
+export default WrappedProvider;

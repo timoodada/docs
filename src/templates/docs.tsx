@@ -34,7 +34,6 @@ const MDRuntime: FC<Props> = (props) => {
   const {
     data, pageContext, children,
   } = props;
-  console.log(props);
 
   useEffect(() => {
     language.init(pageContext?.lang);

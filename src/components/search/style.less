@@ -1,23 +1,25 @@
 @import "src/common/styles/_mixin";
 
-.search-box{
-  color: #ced4d9;
-  .search-icon{
-    height: 22px;
-    border-left: 1px solid #f0f0f0;
-    padding-left: 16px;
-  }
-  input{
-    border: none;
-    outline: none;
-    width: 200px;
-    padding-left: 10px;
-    color: #333;
-    &:placeholder-shown {
-      text-overflow: ellipsis;
+.root-header{
+  .search-box{
+    color: #ced4d9;
+    .search-icon{
+      height: 22px;
+      border-left: 1px solid #f0f0f0;
+      padding-left: 16px;
     }
-    &::placeholder{
-      color: #ced4d9;
+    input{
+      border: none;
+      outline: none;
+      width: 200px;
+      padding-left: 10px;
+      color: #333;
+      &:placeholder-shown {
+        text-overflow: ellipsis;
+      }
+      &::placeholder{
+        color: #ced4d9;
+      }
     }
   }
 }
