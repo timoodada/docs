@@ -35,15 +35,13 @@ export const buildMenu = (originMenu: MenuData[]): MenuData[] => {
   });
   originMenu.sort((a, b) => {
     let boo: boolean;
-    if (a.main || b.main) {
+    if (a.main !== b.main) {
       return a.main ? -1 : 1;
     }
     if (a.order === b.order) {
       boo = a.slugWithPrefix < b.slugWithPrefix;
-    } else if (a.order * b.order > 0) {
-      boo = Math.abs(a.order) < Math.abs(b.order);
     } else {
-      boo = a.order < 0;
+      boo = a.order < b.order;
     }
     return boo ? -1 : 1;
   });
@@ -79,7 +77,9 @@ export const updateSubMenu = (
     map((menus) => {
       const menuMap: any = {};
       menus.forEach((menu, key) => {
-        menuMap[subServices[key]] = menu;
+        if (menu.length) {
+          menuMap[subServices[key]] = menu;
+        }
       });
       sessionStorage.setItem(`${SUB_SERVICE_MENU}_${lang}`, JSON.stringify(menuMap));
       return menuMap;

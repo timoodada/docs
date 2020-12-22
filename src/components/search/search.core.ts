@@ -100,9 +100,16 @@ export class RemoteSearch {
 
   numPerPage: number;
 
+  page: number;
+
   results: FormattedData[] = [];
 
   keyword = '';
+
+  get isEnd(): boolean {
+    return this.searchList.length > this.subServices.length &&
+      this.results.length < (this.page + 1) * this.numPerPage;
+  }
 
   private static format(results: FormattedData[], keyword: string): SearchResults[] {
     const ret = [];
@@ -188,6 +195,7 @@ export class RemoteSearch {
     }
     this.keyword = keyword;
     this.numPerPage = numPerPage;
+    this.page = page;
     const ret = this.results.slice(numPerPage * page, numPerPage + numPerPage * page);
     if (ret.length >= numPerPage) {
       return of(RemoteSearch.format(ret, this.keyword));

@@ -70,6 +70,18 @@ const SubServiceRender: FC<any> = (props) => {
     const subscription = originMenuState.getMainMenu(localeLang).subscribe();
     return () => subscription.unsubscribe();
   }, [localeLang]);
+  useEffect(() => {
+    const { hash } = location;
+    setTimeout(() => {
+      if (hash) {
+        const dom = document.getElementById(hash.slice(1));
+        const mdBody = document.getElementById('markdownBody');
+        if (dom && mdBody) {
+          mdBody.scrollTop = dom.getBoundingClientRect().top - 100;
+        }
+      }
+    }, 20);
+  }, [ast, location]);
 
   return (
     <QueryContext.Provider
@@ -82,6 +94,8 @@ const SubServiceRender: FC<any> = (props) => {
         sider={
           <Sider />
         }
+        ast={ast}
+        title={newQueryContext?.data?.markdownRemark?.fields?.title}
       >
         {
           loading ?

@@ -26,21 +26,56 @@ html,body,#___gatsby,#gatsby-focus-wrapper{
   background: @body-background;
   min-width: 1200px;
   position: relative;
-  display: flex;
-  flex-direction: column;
+  overflow: auto;
   .root-layout-content{
+    padding: 50px 0 0 0;
     display: flex;
-    flex: 1;
-    height: 100%;
-    overflow: auto;
   }
   .markdown-body{
     padding: 20px;
-    overflow: auto;
     width: 100%;
     flex: 1;
     img{
       max-width: 100%;
+    }
+  }
+  .affix-nav{
+    width: 180px;
+    flex: 0 0 180px;
+    .toc{
+      margin: 16px 0;
+      padding-left: 0;
+      font-size: 12px;
+      list-style: none;
+      border-left: 1px solid #f0f0f0;
+      & > li{
+        margin-left: 0;
+        padding-left: 0;
+        line-height: 1.5;
+        list-style: none;
+        &:not(:last-child){
+          margin-bottom: 4px;
+        }
+        a{
+          display: block;
+          width: 90%;
+          margin-left: -1px;
+          padding-left: 16px;
+          overflow: hidden;
+          color: rgba(0,0,0,.85);
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          border-left: 1px solid transparent;
+          transition: all .3s ease;
+          &.current{
+            color: @primary-color;
+            border-color: @primary-color;
+          }
+          &.h2{
+            padding-left: 21px;
+          }
+        }
+      }
     }
   }
 }

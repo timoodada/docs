@@ -1,14 +1,23 @@
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  FC, useCallback, useEffect, useRef, useState,
+} from 'react';
 import '@/common/styles/search-page.less';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
 import 'antd/dist/antd.less';
 import { RemoteSearch, SearchResults } from '@/components/search/search.core';
 import { getSubServices } from '@/helpers/sub-service';
-import { tap } from 'rxjs/operators';
+import { finalize, tap } from 'rxjs/operators';
 import { language } from '@/store/main-states';
-import { Input } from 'antd';
+import {
+  Breadcrumb,
+  Input,
+  Button,
+  Tooltip,
+} from 'antd';
 import { Link } from 'gatsby';
+import { LeftCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { queryParse } from '@/helpers/utils';
 
 const { Search } = Input;
 
@@ -16,13 +25,21 @@ const i18n = {
   'zh-CN': {
     tip: '搜索帮助仅支持关键词搜索，若需多个关键词同时搜索，请以空格区分。',
     placeholder: '搜索...',
+    production: '产品',
+    search: '搜索',
+    more: '查看更多',
   },
   'en-US': {
+    tip: 'The search help only supports keyword search. If you need multiple keywords to search at the same time, please distinguish them with spaces.',
     placeholder: 'Search...',
+    production: 'Production',
+    search: 'Search',
+    more: 'More',
   },
 };
 
-const SearchPage: FC = () => {
+const SearchPage: FC<any> = (props) => {
+  const { location } = props;
   const remoteSearch = useRef<RemoteSearch>();
   const pageInfo = useRef({
     page: 0,
@@ -30,7 +47,10 @@ const SearchPage: FC = () => {
     keywords: '',
   });
   const [results, setResults] = useState<SearchResults[]>([]);
+  const [showMore, setShowMore] = useState(false);
+  const [remoteSearchReady, setRemoteSearchReady] = useState(false);
   const lang = language.use();
+  const { keywords } = queryParse(location.search);
 
   const replace = useCallback((str: string): string => {
     const reg = new RegExp(`(${pageInfo.current.keywords.split(/\s+/g).join('|')}|${pageInfo.current.keywords})`, 'ig');
@@ -50,11 +70,16 @@ const SearchPage: FC = () => {
     }
     return `${v.slug}${v.a ? `#${v.a}` : ''}`;
   }, []);
-  const onSearch = useCallback((keywords: string) => {
-    pageInfo.current.keywords = keywords;
-    if (!keywords) {
-      return;
+  const onSearch = useCallback((keyword: string) => {
+    if (!keyword) { return; }
+    window.location.search = `?keywords=${keyword}`;
+  }, []);
+  const doSearch = useCallback(() => {
+    if (!keywords || !remoteSearchReady) { return; }
+    if (pageInfo.current.keywords !== keywords) {
+      pageInfo.current.page = 0;
     }
+    pageInfo.current.keywords = keywords;
     remoteSearch.current.search(keywords, pageInfo.current.page, pageInfo.current.numPerPage).pipe(
       tap((res) => {
         if (pageInfo.current.page === 0) {
@@ -63,23 +88,32 @@ const SearchPage: FC = () => {
           setResults((prevState) => prevState.concat(res));
         }
       }),
+      finalize(() => {
+        setShowMore(!remoteSearch.current.isEnd);
+      }),
     ).subscribe();
-  }, []);
+  }, [keywords, remoteSearchReady]);
+  const next = useCallback(() => {
+    pageInfo.current.page += 1;
+    doSearch();
+  }, [doSearch]);
 
   useEffect(() => {
     language.init();
   }, []);
   useEffect(() => {
-    if (!lang) {
-      return;
-    }
+    if (!lang) { return; }
     const subscription = getSubServices().pipe(
       tap((res) => {
         remoteSearch.current = new RemoteSearch(res, lang);
+        setRemoteSearchReady(true);
       }),
     ).subscribe();
     return () => subscription.unsubscribe();
   }, [lang]);
+  useEffect(() => {
+    doSearch();
+  }, [doSearch]);
 
   return (
     <div className="search-page">
@@ -87,13 +121,30 @@ const SearchPage: FC = () => {
         <Search
           placeholder={i18n[lang]?.placeholder || ''}
           onSearch={onSearch}
+          className="search-input"
+          defaultValue={keywords}
         />
+        <Tooltip placement="left" title={i18n[lang]?.tip}>
+          <QuestionCircleOutlined className="question-icon" />
+        </Tooltip>
+      </div>
+      <div className="breadcrumb">
+        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+        <a onClick={() => window.history.go(-1)}>
+          <LeftCircleOutlined className="back-icon" />
+        </a>
+        <Breadcrumb>
+          <Breadcrumb.Item>
+            <a href="/">{ i18n[lang]?.production }</a>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>{ i18n[lang]?.search }</Breadcrumb.Item>
+        </Breadcrumb>
       </div>
       <div className="search-results-wrapper">
         {
-          results.map((item) => {
+          results.map((item, index) => {
             return (
-              <div className="search-result-row" key={item.slugWithPrefix}>
+              <div className="search-result-row" key={index}>
                 <h1>
                   <Link to={linkTo(item as any)} dangerouslySetInnerHTML={{ __html: replace(item.title) }} />
                 </h1>
@@ -133,6 +184,14 @@ const SearchPage: FC = () => {
           })
         }
       </div>
+      {
+        showMore ? (
+          <div className="more">
+            <Button type="link" onClick={next}>{ i18n[lang]?.more }</Button>
+          </div>
+        ) :
+          null
+      }
     </div>
   );
 };

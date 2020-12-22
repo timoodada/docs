@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo } from 'react';
+import React, { FC, useEffect } from 'react';
 import { graphql } from 'gatsby';
 import { Provider } from 'react-redux';
 import { QueryContext } from '@/context';
@@ -18,21 +18,9 @@ const renderAst = new RehypeReact({
   },
 }).Compiler;
 
-interface Props {
-  data: any;
-  pageContext: {
-    id: string;
-    lang: string;
-    menu: any;
-    htmlAst: any;
-  };
-  location: any;
-  navigate: any;
-  custom404: any;
-}
-const MDRuntime: FC<Props> = (props) => {
+const MDRuntime: FC<any> = (props) => {
   const {
-    data, pageContext, children,
+    pageContext, data,
   } = props;
 
   useEffect(() => {
@@ -41,13 +29,6 @@ const MDRuntime: FC<Props> = (props) => {
       language.setLangSilent(pageContext.lang);
     }
   }, [pageContext]);
-
-  const content = useMemo(() => {
-    if (pageContext?.htmlAst) {
-      return renderAst(pageContext.htmlAst);
-    }
-    return children;
-  }, [data, pageContext, children]);
 
   return (
     <Provider store={store}>
@@ -61,8 +42,14 @@ const MDRuntime: FC<Props> = (props) => {
           sider={
             <Sider />
           }
+          ast={pageContext?.htmlAst}
+          title={data?.markdownRemark?.fields?.title}
         >
-          { content }
+          {
+            pageContext?.htmlAst ?
+              renderAst(pageContext.htmlAst) :
+              null
+          }
         </Layout>
       </QueryContext.Provider>
     </Provider>
