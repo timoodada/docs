@@ -25,7 +25,7 @@ export const Layout: FC<Props> = (props) => {
   const layout = useRef<HTMLDivElement>();
   const localeLang = language.use();
   const {
-    children, header, sider, className, ast, title
+    children, header, sider, className, ast, title,
   } = props;
   const [titTrees, setTitTrees] = useState<any[]>([]);
   const [currentTit, setCurrentTit] = useState<any>();
